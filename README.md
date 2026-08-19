@@ -1,1 +1,0 @@
-# lotto-ai-app2
