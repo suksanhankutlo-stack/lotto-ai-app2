@@ -323,9 +323,9 @@ st.markdown('<div class="main-title">🚀 LOTTO AI V.MAX TURBO</div>', unsafe_al
 st.markdown('<div class="sub-title">OPTIMIZED HASH PIPELINE<br><b>Adaptive AI + HistGradientBoosting + Dynamic Weights</b></div>', unsafe_allow_html=True)
 st.divider()
 
-selected_lotto = st.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()))
+selected_lotto = st.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()), key="select_vmax2")
 
-if st.button("🚀 วิเคราะห์เลขเด่น", type="primary", use_container_width=True):
+if st.button("🚀 วิเคราะห์เลขเด่น", key="btn_vmax2", type="primary", use_container_width=True):
     df = fetch_and_clean_data(LOTTERY_SOURCES[selected_lotto])
     
     # ปรับแก้: เพิ่มระบบแจ้งเตือนกรณีดึงข้อมูลล้มเหลว
