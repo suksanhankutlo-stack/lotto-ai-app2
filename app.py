@@ -50,11 +50,11 @@ tab1, tab2 = st.tabs(["🟢 ระบบวิเคราะห์เลขเ�
 
 with tab1:
     st.subheader("✨ วิเคราะห์เลขเด่น1")
-    run_script_from_url(URL_V.MAX1)
+    run_script_from_url(URL_VMAX1)
 
 with tab2:
     st.subheader("🛑 วิเคราะห์เลขเด่น2")
-    run_script_from_url(URL_V.MAX2)
+    run_script_from_url(URL_VMAX2)
 
 # ส่วนท้าย (Footer)
 st.divider()
