@@ -46,15 +46,15 @@ st.markdown("ระบบผู้ช่วยวิเคราะห์ **ต�
 st.divider() # เส้นคั่นบางๆ เพื่อความสวยงาม
 
 # สร้าง UI แบบ Tabs
-tab1, tab2 = st.tabs(["🟢 ระบบวิเคราะห์เลขเด่น", "🔴 ระบบวิเคราะห์เลขดับ"])
+tab1, tab2 = st.tabs(["🟢 ระบบวิเคราะห์เลขเด่น1", "🔴 ระบบวิเคราะห์เลขเด่น2"])
 
 with tab1:
-    st.subheader("✨ วิเคราะห์เลขเด่น")
-    run_script_from_url(URL_LEKDEN)
+    st.subheader("✨ วิเคราะห์เลขเด่น1")
+    run_script_from_url(URL_V.MAX1)
 
 with tab2:
-    st.subheader("🛑 วิเคราะห์เลขดับ")
-    run_script_from_url(URL_LEKDUB)
+    st.subheader("🛑 วิเคราะห์เลขเด่น2")
+    run_script_from_url(URL_V.MAX2)
 
 # ส่วนท้าย (Footer)
 st.divider()
