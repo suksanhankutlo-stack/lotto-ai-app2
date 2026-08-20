@@ -16,8 +16,9 @@ st.set_page_config(
 # จัดระเบียบ URL ให้อ่านและแก้ไขง่ายขึ้น
 GITHUB_RAW_URL = "https://raw.githubusercontent.com/suksanhankutlo-stack/lotto-ai-app2/refs/heads/main/"
 
-URL_LEKDEN = f"{GITHUB_RAW_URL}vmax1.py"  
-URL_LEKDUB = f"{GITHUB_RAW_URL}vmax2.py"
+# ✅ แก้ไขชื่อตัวแปรให้ตรงกับที่เรียกใช้ในส่วนของ Tabs ด้านล่าง
+URL_VMAX1 = f"{GITHUB_RAW_URL}vmax1.py"  
+URL_VMAX2 = f"{GITHUB_RAW_URL}vmax2.py"
 
 # ==========================================
 # 3. ฟังก์ชันสำหรับดึงและรันโค้ดจาก URL
@@ -25,12 +26,11 @@ URL_LEKDUB = f"{GITHUB_RAW_URL}vmax2.py"
 def run_script_from_url(url):
     """ดึงไฟล์ Python จาก GitHub และรันผลลัพธ์แสดงบน Streamlit ทันที"""
     try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
         
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            
-            # ใช้ exec() เพื่อประมวลผลโค้ดที่ดึงมา
-            exec(response.text, globals())
+        # ใช้ exec() เพื่อประมวลผลโค้ดที่ดึงมา
+        exec(response.text, globals())
             
     except requests.exceptions.RequestException as e:
         st.error(f"❌ ไม่สามารถดึงข้อมูลจากลิงก์ได้ (ปัญหาการเชื่อมต่อ): {e}")
@@ -46,15 +46,15 @@ st.markdown("ระบบผู้ช่วยวิเคราะห์ **ต�
 st.divider() # เส้นคั่นบางๆ เพื่อความสวยงาม
 
 # สร้าง UI แบบ Tabs
-tab1, tab2 = st.tabs(["🟢 ระบบวิเคราะห์เลขเด่น1", "🔴 ระบบวิเคราะห์เลขเด่น2"])
+tab1, tab2 = st.tabs(["🟢 ระบบวิเคราะห์เลขเด่น 1", "🔴 ระบบวิเคราะห์เลขเด่น 2"])
 
 with tab1:
-    st.subheader("✨ วิเคราะห์เลขเด่น1")
-    run_script_from_url(URL_VMAX1)
+    st.subheader("✨ วิเคราะห์เลขเด่น 1")
+    run_script_from_url(URL_VMAX1) # ✅ ตอนนี้เรียกใช้ผ่านแล้ว เพราะตั้งชื่อตรงกัน
 
 with tab2:
-    st.subheader("🛑 วิเคราะห์เลขเด่น2")
-    run_script_from_url(URL_VMAX2)
+    st.subheader("🛑 วิเคราะห์เลขเด่น 2")
+    run_script_from_url(URL_VMAX2) # ✅ ตอนนี้เรียกใช้ผ่านแล้ว เพราะตั้งชื่อตรงกัน
 
 # ส่วนท้าย (Footer)
 st.divider()
