@@ -347,9 +347,9 @@ st.markdown('<div class="main-title">🚀 LOTTO AI V.MAX TURBO</div>', unsafe_al
 st.markdown('<div class="sub-title">PURE HISTORICAL HYBRID<br><b>AI + Statistics + Equation Discovery + Strict Walk-Forward</b><br>NO DAY • NO MONTH • NO CALENDAR</div>', unsafe_allow_html=True)
 st.divider()
 
-selected_lotto = st.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()))key="select_vmax1")
+selected_lotto = st.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys())) key="select_vmax1")
 
-if st.button("🚀 วิเคราะห์เลขเด่น",key="btn_vmax1",type="primary", use_container_width=True):
+if st.button("🚀 วิเคราะห์เลขเด่น", key="btn_vmax1" ,type="primary", use_container_width=True):
     df = fetch_and_clean_data(LOTTERY_SOURCES[selected_lotto])
     if df.empty: st.stop()
     if len(df) < 50: st.warning(f"⚠️ มีข้อมูลเพียง {len(df)} งวด ระบบยังทำงานได้ แต่ Equation/WF จะมีความเสถียรต่ำ")
