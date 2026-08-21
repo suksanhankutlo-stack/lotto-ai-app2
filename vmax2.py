@@ -1470,17 +1470,20 @@ def get_adaptive_weights(
 # 15. ENSEMBLE ENGINE V3
 # ============================================================
 
-class EnsembleEngine:
-
     def __init__(
         self,
         df
     ):
 
-        # เพิ่ม add_digits(...) เข้าไป เพื่อเตรียมคอลัมน์ H, T, O, T2, O2 ให้พร้อมใช้งาน
-        self.df = add_digits(df.copy()) 
+        # 1. จัดการข้อมูลให้มีคอลัมน์ตัวเลขครบถ้วน
+        self.df = add_digits(df.copy())
 
         self.n = len(self.df)
+
+        # 2. โค้ดส่วนนี้ต้องคงไว้ ห้ามลบทิ้ง
+        self.cfg = get_adaptive_config(
+            self.n
+        )
 
         self.lags = self.cfg["lags"]
         self.rolls = self.cfg["rolls"]
