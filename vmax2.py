@@ -45,20 +45,16 @@ st.set_page_config(
 )
 
 LOTTERY_SOURCES = {
-    "1. หวยไทย":
-        "https://suksan18190.blogspot.com/2026/07/blog-post_07.html",
-
-    "2. หวยธกส.":
-        "https://suksan18190.blogspot.com/2026/07/blog-post_12.html",
-
-    "3. หวยออมสิน":
-        "https://suksan18190.blogspot.com/2026/07/blog-post_525.html",
-
-    "4. หวยลาว":
-        "https://suksan18190.blogspot.com/2026/07/blog-post.html",
-
-    "5. หวยฮานอย":
-        "https://suksan18190.blogspot.com/2026/07/blog-post_08.html",
+    "1. หวยไทย": "https://suksan18190.blogspot.com/2026/07/blog-post_07.html",
+    "2. หวยธกส.": "https://suksan18190.blogspot.com/2026/07/blog-post_12.html",
+    "3. หวยออมสิน": "https://suksan18190.blogspot.com/2026/07/blog-post_525.html",
+    "4. หวยลาว": "https://suksan18190.blogspot.com/2026/07/blog-post.html",
+    "5. หวยฮานอย": "https://suksan18190.blogspot.com/2026/07/blog-post_08.html",
+    "6. หวยมาเลย์": "https://suksan18190.blogspot.com/2026/07/blog-post_10.html",
+    "7. หวยหุ้นไทยเย็น": "https://suksan18190.blogspot.com/2026/07/blog-post_11.html",
+    "8. หวยหุ้นนิเคอิบ่าย": "https://suksan18190.blogspot.com/2026/07/blog-post_412.html",
+    "9. หวยหุ้นฮั่งเส็งบ่าย": "https://suksan18190.blogspot.com/2026/07/blog-post_229.html",
+    "10. หวยหุ้นจีนบ่าย": "https://suksan18190.blogspot.com/2026/07/blog-post_162.html",
 }
 
 
@@ -1470,6 +1466,8 @@ def get_adaptive_weights(
 # 15. ENSEMBLE ENGINE V3
 # ============================================================
 
+class EnsembleEngine:
+
     def __init__(
         self,
         df
@@ -2319,4 +2317,4 @@ if st.button(
         "• Leakage Safe "
         "• Adaptive Weight "
         "• Fast Cache"
-            )
+    )
