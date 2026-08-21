@@ -1477,13 +1477,10 @@ class EnsembleEngine:
         df
     ):
 
-        self.df = df.copy()
+        # เพิ่ม add_digits(...) เข้าไป เพื่อเตรียมคอลัมน์ H, T, O, T2, O2 ให้พร้อมใช้งาน
+        self.df = add_digits(df.copy()) 
 
-        self.n = len(df)
-
-        self.cfg = get_adaptive_config(
-            self.n
-        )
+        self.n = len(self.df)
 
         self.lags = self.cfg["lags"]
         self.rolls = self.cfg["rolls"]
