@@ -623,7 +623,6 @@ class EnsembleEngine:
             "Eq": 0.12
         }
 
-    # ฟังก์ชัน Backtest วัดความแม่นยำของ Model ยังคงใช้ตรรกะตรวจเลขที่ออก (เพราะโมเดลที่แม่นยำ จะคัดเลขดับได้แม่นยำด้วย)
     def backtest(self, pos, X, df_hist):
         n = len(X)
         if n < 45:
@@ -742,7 +741,6 @@ class EnsembleEngine:
         final += 0.001
         final /= final.sum()
 
-        # ดึงตัวที่ Probability *น้อยที่สุด* (เลขดับ) โดยเรียงจากน้อยไปมาก
         def cold_n(p, n):
             return [(int(i), float(p[i])) for i in np.argsort(p)[:n]]
 
@@ -841,9 +839,9 @@ class EnsembleEngine:
             top_score = sum(preds[pos]["Prob"] for pos in ["H", "T", "O"]) / 3
             bot_score = sum(preds[pos]["Prob"] for pos in ["T2", "O2"]) / 2
 
-            # ดึงเลขดับ 7 ตัว (คะแนนน้อยสุด)
-            cold_top = [int(idx) for idx in np.argsort(top_score)[:7]]
-            cold_bot = [int(idx) for idx in np.argsort(bot_score)[:7]]
+            # ดึงเลขดับ 5 ตัว (คะแนนน้อยสุด)
+            cold_top = [int(idx) for idx in np.argsort(top_score)[:5]]
+            cold_bot = [int(idx) for idx in np.argsort(bot_score)[:5]]
 
             actual_row = self.df.iloc[i]
             date_str = actual_row["Date"].strftime("%d-%m-%Y")
@@ -882,8 +880,8 @@ def html_badge(items, badge_class):
 def nums_prob(items):
     return " | ".join(f"{n} ({p:.1%})" for n, p in items)
 
-# เปลี่ยนฟังก์ชันเรียงลำดับดึงตัวที่ Probability ต่ำสุด
-def combine_cold_n(preds, positions, n=7):
+# เปลี่ยนฟังก์ชันเรียงลำดับดึงตัวที่ Probability ต่ำสุด โดยแก้ค่า Default เป็น 5
+def combine_cold_n(preds, positions, n=5):
     score = sum(preds[pos]["Prob"] for pos in positions) / len(positions)
     return [(int(i), float(score[i])) for i in np.argsort(score)[:n]]
 
@@ -1004,15 +1002,15 @@ if st.button("❄️ วิเคราะห์เลขดับด้วย A
     # ====================================================
     # OVERALL COLD (เลขดับภาพรวม)
     # ====================================================
-    cold_top_overall = combine_cold_n(preds, ["H", "T", "O"], 7)
-    cold_bottom_overall = combine_cold_n(preds, ["T2", "O2"], 7)
+    cold_top_overall = combine_cold_n(preds, ["H", "T", "O"], 5)
+    cold_bottom_overall = combine_cold_n(preds, ["T2", "O2"], 5)
 
     st.subheader("❄️ สรุปเลขดับภาพรวม (ตัดทิ้ง)")
 
     st.markdown(
         f"""
         <div class="cold-card">
-            <div style="font-weight:700; color:#1565c0;">❄️ COLD 7-TOP ดับบน (ความน่าจะเป็นต่ำ)</div>
+            <div style="font-weight:700; color:#1565c0;">❄️ COLD 5-TOP ดับบน (ความน่าจะเป็นต่ำ)</div>
             <div style="text-align:center; margin:10px 0;">{html_top5(cold_top_overall)}</div>
             <div style="font-size:13px; color:#546e7a; text-align:center;">{nums_prob(cold_top_overall)}</div>
         </div>
@@ -1022,7 +1020,7 @@ if st.button("❄️ วิเคราะห์เลขดับด้วย A
     st.markdown(
         f"""
         <div class="cold-card">
-            <div style="font-weight:700; color:#1565c0;">❄️ COLD 7-TOP ดับล่าง (ความน่าจะเป็นต่ำ)</div>
+            <div style="font-weight:700; color:#1565c0;">❄️ COLD 5-TOP ดับล่าง (ความน่าจะเป็นต่ำ)</div>
             <div style="text-align:center; margin:10px 0;">{html_top5(cold_bottom_overall)}</div>
             <div style="font-size:13px; color:#546e7a; text-align:center;">{nums_prob(cold_bottom_overall)}</div>
         </div>
@@ -1034,7 +1032,7 @@ if st.button("❄️ วิเคราะห์เลขดับด้วย A
     # ====================================================
     if past_records:
         st.write("")
-        st.subheader("📜 ประวัติย้อนหลัง 10 งวด (Backtest เลขดับ 7-TOP)")
+        st.subheader("📜 ประวัติย้อนหลัง 10 งวด (Backtest เลขดับ 5-TOP)")
         
         for rec in past_records:
             top_mark = "✅ <span style='color:green;font-weight:bold;'>ดับอยู่ (ไม่มา)</span>" if rec["Top_Hit"] else "❌ <span style='color:red;'>ดับหลุด (ออกเต็มๆ)</span>"
