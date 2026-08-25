@@ -902,12 +902,26 @@ st.divider()
 # ============================================================
 
 c1, c2 = st.columns(2)
-selected_lotto = c1.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()))
+
+# เพิ่ม key="select_lotto_type" เพื่อให้ ID ไม่ซ้ำ
+selected_lotto = c1.selectbox(
+    "🎯 เลือกหวย", 
+    list(LOTTERY_SOURCES.keys()),
+    key="select_lotto_type" 
+)
+
 day_options = {
     "อัตโนมัติ": None, "วันจันทร์": 0, "วันอังคาร": 1, "วันพุธ": 2,
     "วันพฤหัสบดี": 3, "วันศุกร์": 4, "วันเสาร์": 5, "วันอาทิตย์": 6
 }
-day_label = c2.selectbox("📅 วันออกรางวัล", list(day_options.keys()))
+
+# เพิ่ม key="select_day_option" เพื่อให้ ID ไม่ซ้ำ
+day_label = c2.selectbox(
+    "📅 วันออกรางวัล", 
+    list(day_options.keys()),
+    key="select_day_option"
+)
+
 
 
 # ============================================================
