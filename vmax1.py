@@ -528,20 +528,25 @@ class EnsembleEngine:
             
             preds = {pos: self.process_position(pos, hist, X, X_next, None) for pos in ["H", "T", "O", "T2", "O2"]}
             
-            top_score = sum(preds[pos]["Prob"] for pos in ["H", "T", "O"]) / 3
-            bot_score = sum(preds[pos]["Prob"] for pos in ["T2", "O2"]) / 2
-            
-            cold_top = [int(idx) for idx in np.argsort(top_score)[:5]]
-            cold_bot = [int(idx) for idx in np.argsort(bot_score)[:5]]
-
             actual_3d, actual_2d = str(self.df.iloc[i]["Result_3D"]).zfill(3), str(self.df.iloc[i]["Result_2D"]).zfill(2)
+            actual_h, actual_t, actual_o = int(actual_3d[0]), int(actual_3d[1]), int(actual_3d[2])
+            actual_t2, actual_o2 = int(actual_2d[0]), int(actual_2d[1])
+
+            # ดึงเลขดับ 5 ตัวของแต่ละหลัก
+            cold_h = [int(idx) for idx in np.argsort(preds["H"]["Prob"])[:5]]
+            cold_t = [int(idx) for idx in np.argsort(preds["T"]["Prob"])[:5]]
+            cold_o = [int(idx) for idx in np.argsort(preds["O"]["Prob"])[:5]]
+            cold_t2 = [int(idx) for idx in np.argsort(preds["T2"]["Prob"])[:5]]
+            cold_o2 = [int(idx) for idx in np.argsort(preds["O2"]["Prob"])[:5]]
             
             records.append({
                 "Date": self.df.iloc[i]["Date"].strftime("%d-%m-%Y"),
                 "Result_3D": actual_3d, "Result_2D": actual_2d,
-                "Cold_Top": cold_top, "Cold_Bot": cold_bot,
-                "Top_Hit": not any(int(d) in cold_top for d in actual_3d),
-                "Bot_Hit": not any(int(d) in cold_bot for d in actual_2d)
+                "H_Actual": actual_h, "H_Cold": cold_h, "H_Hit": actual_h not in cold_h,
+                "T_Actual": actual_t, "T_Cold": cold_t, "T_Hit": actual_t not in cold_t,
+                "O_Actual": actual_o, "O_Cold": cold_o, "O_Hit": actual_o not in cold_o,
+                "T2_Actual": actual_t2, "T2_Cold": cold_t2, "T2_Hit": actual_t2 not in cold_t2,
+                "O2_Actual": actual_o2, "O2_Cold": cold_o2, "O2_Hit": actual_o2 not in cold_o2
             })
         return records[::-1]
 
@@ -621,15 +626,27 @@ if st.button("❄️ เริ่มวิเคราะห์ V.MAX HYBRID", t
 
     if past_records:
         st.write("")
-        st.subheader("📜 ประวัติย้อนหลัง 10 งวด (Backtest เลขดับ 5-TOP)")
+        st.subheader("📜 ประวัติย้อนหลัง 10 งวด (Backtest เลขดับแยกทุกหลัก)")
+        
+        def get_mark(hit, actual):
+            if hit:
+                return f"✅ <span style='color:green;font-weight:bold;'>ดับอยู่ (ไม่มา)</span>"
+            return f"❌ <span style='color:red;'>ดับหลุด (มา {actual})</span>"
+
         for rec in past_records:
-            top_mark = "✅ <span style='color:green;font-weight:bold;'>ดับอยู่ (ไม่มา)</span>" if rec["Top_Hit"] else "❌ <span style='color:red;'>ดับหลุด (ออกเต็มๆ)</span>"
-            bot_mark = "✅ <span style='color:green;font-weight:bold;'>ดับอยู่ (ไม่มา)</span>" if rec["Bot_Hit"] else "❌ <span style='color:red;'>ดับหลุด (ออกเต็มๆ)</span>"
             st.markdown(f"""
-                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 10px; background-color: #fafafa;">
-                    <div style="font-weight: 700; color: #444; margin-bottom: 8px;">📅 งวดวันที่ {rec['Date']}</div>
-                    <div style="font-size: 14px; margin-bottom: 4px;"><b>บน ({rec['Result_3D']}):</b> ตัดเลข {" • ".join(map(str, rec["Cold_Top"]))} &nbsp;👉&nbsp; {top_mark}</div>
-                    <div style="font-size: 14px;"><b>ล่าง ({rec['Result_2D']}):</b> ตัดเลข {" • ".join(map(str, rec["Cold_Bot"]))} &nbsp;👉&nbsp; {bot_mark}</div>
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 14px; margin-bottom: 12px; background-color: #fafafa; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="font-weight: 800; color: #1565c0; margin-bottom: 10px; font-size: 16px;">
+                        📅 งวดวันที่ {rec['Date']} &nbsp;|&nbsp; ผลออก: <span style="color:#d32f2f;">{rec['Result_3D']} - {rec['Result_2D']}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="font-size: 14px;"><b>📍 หลักร้อยบน (H):</b> &nbsp;ตัดเลข {" • ".join(map(str, rec["H_Cold"]))} &nbsp;👉&nbsp; {get_mark(rec["H_Hit"], rec["H_Actual"])}</div>
+                        <div style="font-size: 14px;"><b>📍 หลักสิบบน (T):</b> &nbsp;&nbsp;&nbsp;ตัดเลข {" • ".join(map(str, rec["T_Cold"]))} &nbsp;👉&nbsp; {get_mark(rec["T_Hit"], rec["T_Actual"])}</div>
+                        <div style="font-size: 14px;"><b>📍 หลักหน่วยบน (O):</b> ตัดเลข {" • ".join(map(str, rec["O_Cold"]))} &nbsp;👉&nbsp; {get_mark(rec["O_Hit"], rec["O_Actual"])}</div>
+                        <hr style="margin: 8px 0; border: 0; border-top: 1px dashed #bdbdbd;">
+                        <div style="font-size: 14px;"><b>📍 หลักสิบล่าง (T2):</b> &nbsp;ตัดเลข {" • ".join(map(str, rec["T2_Cold"]))} &nbsp;👉&nbsp; {get_mark(rec["T2_Hit"], rec["T2_Actual"])}</div>
+                        <div style="font-size: 14px;"><b>📍 หลักหน่วยล่าง (O2):</b> ตัดเลข {" • ".join(map(str, rec["O2_Cold"]))} &nbsp;👉&nbsp; {get_mark(rec["O2_Hit"], rec["O2_Actual"])}</div>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
 
