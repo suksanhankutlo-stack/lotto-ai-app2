@@ -1,17 +1,9 @@
 # ============================================================
-# ❄️ LOTTO AI V.MAX HYBRID (ระบบเลขดับ) - OPTIMIZED VERSION
+# ❄️ LOTTO AI V.MAX HYBRID - ULTIMATE OPTIMIZED (Fast & Stable)
 # ============================================================
-#
-# AI:
-#   RF + ExtraTrees + HistGradientBoosting (Tuned)
-#
-# STATISTICS:
-#   Frequency + Transition + Pattern
-#
-# EQUATION DISCOVERY:
-#   Fully Vectorized Numpy (Blazing Fast)
-#   Lag 1,2,3,5 + Advanced Cross-Features
-#
+# SPEED UP: Fast Mode Backtesting & Dynamic Weight Caching
+# ACCURACY: Tuned Hyperparameters & Stricter Equation Thresholds
+# STABILITY: Regularization (L2) & Min Samples Leaf increased
 # ============================================================
 
 import streamlit as st
@@ -31,22 +23,14 @@ from sklearn.ensemble import (
 
 warnings.filterwarnings("ignore")
 
-
 # ============================================================
 # 0. STREAMLIT CONFIG
 # ============================================================
-
-st.set_page_config(
-    page_title="Lotto AI V.MAX (เลขดับ)",
-    page_icon="❄️",
-    layout="centered"
-)
-
+st.set_page_config(page_title="Lotto AI V.MAX (เลขดับ)", page_icon="❄️", layout="centered")
 
 # ============================================================
 # 1. LOTTERY SOURCES
 # ============================================================
-
 LOTTERY_SOURCES = {
     "1. หวยไทย": "https://suksan18190.blogspot.com/2026/07/blog-post_07.html",
     "2. หวยธกส.": "https://suksan18190.blogspot.com/2026/07/blog-post_12.html",
@@ -60,81 +44,38 @@ LOTTERY_SOURCES = {
     "10. หวยหุ้นจีนบ่าย": "https://suksan18190.blogspot.com/2026/07/blog-post_162.html"
 }
 
-
 # ============================================================
 # 2. BASIC CSS
 # ============================================================
-
 st.markdown(
     """
     <style>
-    .main-title {
-        font-size: 30px;
-        font-weight: 800;
-        text-align: center;
-        margin-bottom: 4px;
-        color: #0d47a1;
-    }
-    .sub-title {
-        font-size: 14px;
-        text-align: center;
-        color: #546e7a;
-        margin-bottom: 15px;
-    }
-    .position-title {
-        font-size: 18px;
-        font-weight: 800;
-        margin-top: 18px;
-        margin-bottom: 8px;
-        color: #1565c0;
-    }
-    .cold-card {
-        padding: 14px;
-        border-radius: 14px;
-        border: 1px solid #bbdefb;
-        background-color: #e3f2fd;
-        margin: 8px 0;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .number-highlight {
-        font-size: 26px;
-        font-weight: 800;
-        padding: 4px 8px;
-        color: #0d47a1;
-    }
-    .dot-sep {
-        color: #90caf9;
-        margin: 0 4px;
-    }
-    .info-row {
-        padding: 6px 0;
-        font-size: 14px;
-    }
+    .main-title { font-size: 30px; font-weight: 800; text-align: center; margin-bottom: 4px; color: #0d47a1; }
+    .sub-title { font-size: 14px; text-align: center; color: #546e7a; margin-bottom: 15px; }
+    .position-title { font-size: 18px; font-weight: 800; margin-top: 18px; margin-bottom: 8px; color: #1565c0; }
+    .cold-card { padding: 14px; border-radius: 14px; border: 1px solid #bbdefb; background-color: #e3f2fd; margin: 8px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .number-highlight { font-size: 26px; font-weight: 800; padding: 4px 8px; color: #0d47a1; }
+    .dot-sep { color: #90caf9; margin: 0 4px; }
+    .info-row { padding: 6px 0; font-size: 14px; }
     .badge-ai { background-color: #fff3e0; border: 1px solid #ffcc80; padding: 4px 8px; border-radius: 6px; font-weight: 600; color: #e65100; }
     .badge-stat { background-color: #e8f5e9; border: 1px solid #a5d6a7; padding: 4px 8px; border-radius: 6px; font-weight: 600; color: #2e7d32; }
     .badge-eq { background-color: #f3e5f5; border: 1px solid #ce93d8; padding: 4px 8px; border-radius: 6px; font-weight: 600; color: #6a1b9a; }
     </style>
-    """,
-    unsafe_allow_html=True
+    """, unsafe_allow_html=True
 )
 
-
 # ============================================================
-# 3. FETCH DATA (Cached & Optimized)
+# 3. FETCH DATA (TTL Increased for speed)
 # ============================================================
-
-@st.cache_data(ttl=180, show_spinner=False)
+@st.cache_data(ttl=600, show_spinner=False)
 def fetch_and_clean_data(url):
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
+        headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
         main = soup.find("div", class_=re.compile(r"post-body|entry-content|post-content|content"))
-        if main is None:
-            main = soup
+        if main is None: main = soup
 
         lines = main.get_text(separator="\n").split("\n")
         date_pattern = re.compile(r"(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})")
@@ -151,76 +92,51 @@ def fetch_and_clean_data(url):
                     d = pd.to_datetime(dm.group(1), errors="coerce")
                     if not pd.isna(d): current_date = d
                 except: pass
-
             nm = num_pattern.search(line)
             if not nm: continue
 
-            if nm.group(1):
-                r3, r2 = nm.group(1), nm.group(2)
-            elif nm.group(3):
-                r3, r2 = nm.group(3)[-3:], nm.group(4)
-            else:
-                continue
+            if nm.group(1): r3, r2 = nm.group(1), nm.group(2)
+            elif nm.group(3): r3, r2 = nm.group(3)[-3:], nm.group(4)
+            else: continue
 
-            rows.append({
-                "Date": current_date,
-                "Result_3D": str(r3).zfill(3),
-                "Result_2D": str(r2).zfill(2)
-            })
+            rows.append({"Date": current_date, "Result_3D": str(r3).zfill(3), "Result_2D": str(r2).zfill(2)})
 
-        if len(rows) < 10:
-            raise ValueError("ข้อมูลน้อยเกินไป")
-
+        if len(rows) < 10: raise ValueError("ข้อมูลน้อยเกินไป")
         df = pd.DataFrame(rows)
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        df = df.dropna().drop_duplicates().sort_values("Date").reset_index(drop=True)
-        return df
-
+        return df.dropna().drop_duplicates().sort_values("Date").reset_index(drop=True)
     except Exception as e:
         st.error(f"❌ ดึงข้อมูลไม่ได้: {e}")
         return pd.DataFrame()
 
-
 # ============================================================
-# 4. FEATURE ENGINEERING (Enhanced)
+# 4. FEATURE ENGINEERING
 # ============================================================
-
 def build_features(df, lags, rolls):
     x = df.copy()
     r3 = x["Result_3D"].astype(str)
     r2 = x["Result_2D"].astype(str)
 
-    x["H"] = r3.str[0].astype(np.int8)
-    x["T"] = r3.str[1].astype(np.int8)
-    x["O"] = r3.str[2].astype(np.int8)
-    x["T2"] = r2.str[0].astype(np.int8)
-    x["O2"] = r2.str[1].astype(np.int8)
+    x["H"], x["T"], x["O"] = r3.str[0].astype(np.int8), r3.str[1].astype(np.int8), r3.str[2].astype(np.int8)
+    x["T2"], x["O2"] = r2.str[0].astype(np.int8), r2.str[1].astype(np.int8)
 
     ph, pt, po = x["H"].shift(1), x["T"].shift(1), x["O"].shift(1)
-
-    x["PrevSum"] = ph + pt + po
-    x["PrevOdd"] = (ph % 2) + (pt % 2) + (po % 2)
-    x["DistHT"] = (ph - pt).abs()
-    x["DistTO"] = (pt - po).abs()
+    x["PrevSum"], x["PrevOdd"] = ph + pt + po, (ph % 2) + (pt % 2) + (po % 2)
+    x["DistHT"], x["DistTO"] = (ph - pt).abs(), (pt - po).abs()
 
     for pos in ["H", "T", "O", "T2", "O2"]:
         s = x[pos]
         prev = s.shift(1)
-
         x[f"Odd_{pos}"] = (prev % 2)
         x[f"High_{pos}"] = (prev >= 5).astype(np.int8)
         x[f"Prime_{pos}"] = (prev.isin([2, 3, 5, 7])).astype(np.int8)
-        x[f"Mod3_{pos}"] = (prev % 3).astype(np.float32)
-        x[f"Mod4_{pos}"] = (prev % 4).astype(np.float32)
+        x[f"Mod3_{pos}"], x[f"Mod4_{pos}"] = (prev % 3).astype(np.float32), (prev % 4).astype(np.float32)
 
-        for lag in lags:
-            x[f"L{lag}_{pos}"] = s.shift(lag)
-
+        for lag in lags: x[f"L{lag}_{pos}"] = s.shift(lag)
         for w in rolls:
             x[f"RM{w}_{pos}"] = prev.rolling(w, min_periods=1).mean()
             x[f"RSTD{w}_{pos}"] = prev.rolling(w, min_periods=1).std().fillna(0)
 
-        # Skip logic optimized
         arr = s.to_numpy()
         raw_skip = np.zeros(len(arr), dtype=np.float32)
         last = np.full(10, -1, dtype=np.int32)
@@ -232,11 +148,9 @@ def build_features(df, lags, rolls):
 
     return x.replace([np.inf, -np.inf], np.nan).fillna(-1)
 
-
 # ============================================================
 # 5. STATISTICAL ENGINES
 # ============================================================
-
 class FrequencyEngine:
     def analyze(self, df, pos):
         s = df[pos].astype(int)
@@ -266,63 +180,46 @@ class PatternEngine:
         score = np.array([freq.get(d, 0) for d in range(10)])
         return (score + 0.01) / (score + 0.01).sum()
 
-
 # ============================================================
-# 6. VECTORIZED EQUATION DISCOVERY (Blazing Fast)
+# 6. VECTORIZED EQUATION DISCOVERY
 # ============================================================
-
 class VectorEquationEngine:
     def discover(self, X_hist, y_hist, X_next, pos, bt=10):
         n = len(X_hist)
         default_res = {"prob": np.ones(10)/10, "cold": [], "strength": 0.0, "stable": 0, "total": 0, "equations": []}
         if n < 50: return default_res
 
-        # Pull historical lag vectors
         L1, L2 = X_hist[f"L1_{pos}"].values, X_hist[f"L2_{pos}"].values
         L3, L5 = X_hist[f"L3_{pos}"].values, X_hist[f"L5_{pos}"].values
         actual = y_hist.values
 
-        # Pull next target lags
         n_L1, n_L2 = X_next[f"L1_{pos}"].values[0], X_next[f"L2_{pos}"].values[0]
         n_L3, n_L5 = X_next[f"L3_{pos}"].values[0], X_next[f"L5_{pos}"].values[0]
 
-        # Define equations mathematically (Vectorized ops)
         def build_eqs(a, b, c, d):
             return {
                 "L1": a, "L2": b, "L3": c, "L5": d,
-                "L1+L2": a+b, "L1-L2": a-b, "ABS(L1-L2)": np.abs(a-b),
-                "L1+L3": a+c, "L1-L3": a-c, "ABS(L1-L3)": np.abs(a-c),
-                "L2+L3": b+c, "L2-L3": b-c, "ABS(L2-L3)": np.abs(b-c),
-                "L1+L5": a+d, "ABS(L1-L5)": np.abs(a-d),
-                "L1+L2+L3": a+b+c, "2L1+L2": 2*a+b, "L1+2L2": a+2*b,
-                "L1*L2": a*b, "L1*2": a*2, "L1*3": a*3, "L1+5": a+5
+                "L1+L2": a+b, "L1-L2": np.abs(a-b), "L1+L3": a+c, "L1-L3": np.abs(a-c),
+                "L2+L3": b+c, "L1+L5": a+d, "L3+L5": c+d, "L1+L2+L3": a+b+c, 
+                "2L1+L2": 2*a+b, "L1*L2": a*b, "L1*2": a*2, "L1+5": a+5
             }
 
-        eqs_hist = build_eqs(L1, L2, L3, L5)
-        eqs_next = build_eqs(n_L1, n_L2, n_L3, n_L5)
-
-        start = max(35, n - bt)
-        recent_start = max(0, n - 5)
+        eqs_hist, eqs_next = build_eqs(L1, L2, L3, L5), build_eqs(n_L1, n_L2, n_L3, n_L5)
+        start, recent_start = max(35, n - bt), max(0, n - 5)
         results = []
 
         for name, arr in eqs_hist.items():
             preds = np.floor(np.nan_to_num(arr, nan=-999)).astype(int) % 10
-            
-            test_preds = preds[start:n]
-            test_actual = actual[start:n]
-            hit_rate = np.mean(test_preds == test_actual)
+            hit_rate = np.mean(preds[start:n] == actual[start:n])
+            recent_rate = np.mean(preds[recent_start:n] == actual[recent_start:n])
 
-            recent_preds = preds[recent_start:n]
-            recent_actual = actual[recent_start:n]
-            recent_rate = np.mean(recent_preds == recent_actual)
-
-            if hit_rate >= 0.10 and recent_rate >= 0.10:
+            # Stricter thresholds for stability
+            if hit_rate >= 0.12 and recent_rate >= 0.15:
                 score = 0.65 * hit_rate + 0.35 * recent_rate
                 n_pred = int(np.floor(np.nan_to_num(eqs_next[name], nan=-999))) % 10
                 results.append({"name": name, "score": score, "hit": hit_rate, "recent": recent_rate, "pred": n_pred})
 
         if not results: return default_res
-
         results.sort(key=lambda x: x["score"], reverse=True)
         selected = results[:10]
         
@@ -336,44 +233,43 @@ class VectorEquationEngine:
         prob = (prob / total_w) + 0.01 if total_w > 0 else np.ones(10)/10
         prob /= prob.sum()
 
-        cold = [(int(i), float(prob[i])) for i in np.argsort(prob)[:5]]
-        strength = np.mean([r["hit"] for r in selected])
-
         return {
-            "prob": prob, "cold": cold, "strength": strength,
-            "stable": len(selected), "total": len(eqs_hist),
-            "equations": selected
+            "prob": prob, "cold": [(int(i), float(prob[i])) for i in np.argsort(prob)[:5]], 
+            "strength": np.mean([r["hit"] for r in selected]),
+            "stable": len(selected), "total": len(eqs_hist), "equations": selected
         }
 
-
 # ============================================================
-# 7. AI MODEL (Tuned)
+# 7. AI MODEL (Optimized for Stability & Speed)
 # ============================================================
-
 class FastAI:
-    def __init__(self, trees=65, weights=(0.35, 0.35, 0.30)):
+    def __init__(self, trees=80, weights=(0.40, 0.35, 0.25)):
         self.trees = trees
         self.weights = weights
 
-    def predict(self, X, y, X_next):
+    def predict(self, X, y, X_next, fast_mode=False):
         rf_w, et_w, hgb_w = self.weights
         result = np.zeros(10)
         total_w = 0.0
 
+        # Fast mode reduces trees for lightning-fast historical backtesting
+        t_trees = max(10, self.trees // 2) if fast_mode else self.trees
+        t_iter = max(30, 90 // 2) if fast_mode else 90
+
         if rf_w > 0:
-            model = RandomForestClassifier(n_estimators=self.trees, max_depth=7, min_samples_leaf=4, class_weight="balanced", n_jobs=-1, random_state=42)
+            model = RandomForestClassifier(n_estimators=t_trees, max_depth=6, min_samples_leaf=5, class_weight="balanced", n_jobs=-1, random_state=42)
             model.fit(X, y)
             for c, p in zip(model.classes_, model.predict_proba(X_next)[0]): result[int(c)] += p * rf_w
             total_w += rf_w
 
         if et_w > 0:
-            model = ExtraTreesClassifier(n_estimators=self.trees, max_depth=7, min_samples_leaf=4, class_weight="balanced", n_jobs=-1, random_state=43)
+            model = ExtraTreesClassifier(n_estimators=t_trees, max_depth=6, min_samples_leaf=5, class_weight="balanced", n_jobs=-1, random_state=43)
             model.fit(X, y)
             for c, p in zip(model.classes_, model.predict_proba(X_next)[0]): result[int(c)] += p * et_w
             total_w += et_w
 
         if hgb_w > 0:
-            model = HistGradientBoostingClassifier(max_iter=85, learning_rate=0.05, max_leaf_nodes=15, min_samples_leaf=4, l2_regularization=0.5, random_state=44)
+            model = HistGradientBoostingClassifier(max_iter=t_iter, learning_rate=0.04, max_leaf_nodes=15, min_samples_leaf=5, l2_regularization=2.0, random_state=44)
             model.fit(X, y)
             for c, p in zip(model.classes_, model.predict_proba(X_next)[0]): result[int(c)] += p * hgb_w
             total_w += hgb_w
@@ -381,18 +277,16 @@ class FastAI:
         result = (result / total_w) + 0.001 if total_w > 0 else np.ones(10)/10
         return result / result.sum()
 
-
 # ============================================================
-# 8. ENSEMBLE ENGINE (Optimized Workflow)
+# 8. ENSEMBLE ENGINE (Optimized Core)
 # ============================================================
-
 class EnsembleEngine:
     def __init__(self, df, lottery_name, target_dow=None):
         self.df = df.copy()
         self.target_dow = target_dow
         n = len(df)
 
-        self.trees = 65
+        self.trees = 80 # Increased for stability
         self.lags, self.rolls = [1, 2, 3, 5], [3, 5, 10]
         self.bt = 10 if n >= 700 else (9 if n >= 400 else 8)
 
@@ -406,7 +300,7 @@ class EnsembleEngine:
 
         self.freq, self.transition, self.pattern = FrequencyEngine(), TransitionEngine(), PatternEngine()
         self.equation = VectorEquationEngine()
-        self.ai = FastAI(self.trees, (0.35, 0.35, 0.30))
+        self.ai = FastAI(self.trees, (0.40, 0.35, 0.25))
 
         self.base_weights = {"AI": 0.50, "Freq": 0.18, "ST": 0.12, "BT": 0.08, "Eq": 0.12}
 
@@ -425,9 +319,9 @@ class EnsembleEngine:
             actual = int(df_hist[pos].iloc[idx])
             hist = df_hist.iloc[:idx]
 
-            # AI Proxy (n_jobs=1 เพื่อความเร็วขั้นสุดใน Loop)
+            # Fast Proxy for AI Weighting (Drastically speeds up walk-forward)
             try:
-                proxy = ExtraTreesClassifier(n_estimators=10, max_depth=4, min_samples_leaf=3, n_jobs=1, random_state=200+step)
+                proxy = ExtraTreesClassifier(n_estimators=5, max_depth=3, min_samples_leaf=4, n_jobs=1, random_state=200+step)
                 proxy.fit(X.iloc[:idx], hist[pos])
                 tmp = np.zeros(10)
                 for c, p in zip(proxy.classes_, proxy.predict_proba(X.iloc[[idx]])[0]): tmp[int(c)] = p
@@ -435,7 +329,7 @@ class EnsembleEngine:
                 if outcomes["AI"][-1]: scores["AI"] += decay
             except: outcomes["AI"].append(0)
 
-            # Stats
+            # Stats & Equations
             outcomes["Freq"].append(1 if actual in np.argsort(self.freq.analyze(hist, pos))[::-1][:5] else 0)
             if outcomes["Freq"][-1]: scores["Freq"] += decay
 
@@ -445,7 +339,6 @@ class EnsembleEngine:
             outcomes["BT"].append(1 if actual in np.argsort(self.pattern.analyze(hist, pos))[::-1][:5] else 0)
             if outcomes["BT"][-1]: scores["BT"] += decay
 
-            # Eq (Fast)
             eq_prob = self.equation.discover(X.iloc[:idx], hist[pos], X.iloc[[idx]], pos, bt=min(8, max(5, idx - 35)))["prob"]
             outcomes["Eq"].append(1 if actual in np.argsort(eq_prob)[::-1][:5] else 0)
             if outcomes["Eq"][-1]: scores["Eq"] += decay
@@ -458,9 +351,11 @@ class EnsembleEngine:
         total = sum(weighted.values())
         
         weights = {k: v / total for k, v in weighted.items()} if total > 0 else self.base_weights.copy()
-        if weights["AI"] > 0.58: # Cap AI weight to maintain ensemble hybrid
-            diff = weights["AI"] - 0.58
-            weights["AI"] = 0.58
+        
+        # Cap AI weight slightly lower to ensure ensemble diversity
+        if weights["AI"] > 0.55: 
+            diff = weights["AI"] - 0.55
+            weights["AI"] = 0.55
             others = sum(v for k, v in weights.items() if k != "AI")
             for k in weights:
                 if k != "AI": weights[k] += diff * (weights[k] / others)
@@ -468,9 +363,15 @@ class EnsembleEngine:
         msg = f"WF {self.bt} งวด | AI {accuracy['AI']:.0%} (S {stability['AI']:.0%}) | Freq {accuracy['Freq']:.0%} | Eq {accuracy['Eq']:.0%}"
         return (weights, msg)
 
-    def process_position(self, pos, hist, X, X_next, next_date):
-        weights, bt_msg = self.backtest(pos, X, hist)
-        ai = self.ai.predict(X, hist[pos], X_next)
+    def process_position(self, pos, hist, X, X_next, next_date, cached_weights=None):
+        # If we have cached weights (Historical mode), skip the expensive walk-forward
+        fast_mode = cached_weights is not None
+        if cached_weights:
+            weights, bt_msg = cached_weights, "Historical Skip"
+        else:
+            weights, bt_msg = self.backtest(pos, X, hist)
+
+        ai = self.ai.predict(X, hist[pos], X_next, fast_mode=fast_mode)
         fq = self.freq.analyze(hist, pos)
         stp = self.transition.analyze(hist, pos)
         ptn = self.pattern.analyze(hist, pos)
@@ -508,31 +409,31 @@ class EnsembleEngine:
         predictions = {pos: self.process_position(pos, hist, X, X_next, next_date) for pos in ["H", "T", "O", "T2", "O2"]}
         progress_bar.progress(60)
 
-        return predictions, next_date
+        return predictions, next_date, ext
 
-    def evaluate_past_10(self, progress_bar, status_text):
+    def evaluate_past_10(self, ext_df, current_preds, progress_bar, status_text):
         n_total = len(self.df)
         num_records = min(10, n_total - 35)
         if num_records < 1: return []
 
-        ext = build_features(self.df, self.lags, self.rolls)
         records = []
         
-        # Optimize past evaluation by skipping deep backtests for history visually
+        # Optimize past evaluation by using weights from current_preds (Dynamic Weight Caching)
+        # This skips the heavy walk-forward loop in history calculation, making it blazing fast.
         for step, i in enumerate(range(n_total - num_records, n_total)):
-            status_text.markdown(f"🕰️ **Step 4/4:** Backtest วิเคราะห์ย้อนหลัง งวดที่ {step+1}/{num_records}...")
+            status_text.markdown(f"🕰️ **Step 4/4:** Backtest วิเคราะห์ย้อนหลัง (Fast Mode) งวดที่ {step+1}/{num_records}...")
             progress_bar.progress(60 + int(((step + 1) / num_records) * 40))
             
-            hist = ext.iloc[:i]
-            X, X_next = hist[self.features].astype(np.float32), ext.iloc[[i]][self.features].astype(np.float32)
+            hist = ext_df.iloc[:i]
+            X, X_next = hist[self.features].astype(np.float32), ext_df.iloc[[i]][self.features].astype(np.float32)
             
-            preds = {pos: self.process_position(pos, hist, X, X_next, None) for pos in ["H", "T", "O", "T2", "O2"]}
+            # Pass cached weights to bypass re-calculating walk-forward for historical draws
+            preds = {pos: self.process_position(pos, hist, X, X_next, None, cached_weights=current_preds[pos]["Weights"]) for pos in ["H", "T", "O", "T2", "O2"]}
             
             actual_3d, actual_2d = str(self.df.iloc[i]["Result_3D"]).zfill(3), str(self.df.iloc[i]["Result_2D"]).zfill(2)
             actual_h, actual_t, actual_o = int(actual_3d[0]), int(actual_3d[1]), int(actual_3d[2])
             actual_t2, actual_o2 = int(actual_2d[0]), int(actual_2d[1])
 
-            # ดึงเลขดับ 5 ตัวของแต่ละหลัก
             cold_h = [int(idx) for idx in np.argsort(preds["H"]["Prob"])[:5]]
             cold_t = [int(idx) for idx in np.argsort(preds["T"]["Prob"])[:5]]
             cold_o = [int(idx) for idx in np.argsort(preds["O"]["Prob"])[:5]]
@@ -550,11 +451,9 @@ class EnsembleEngine:
             })
         return records[::-1]
 
-
 # ============================================================
 # 9. UI & MAIN EXECUTION
 # ============================================================
-
 def html_top5(items): return '<span class="dot-sep">•</span>'.join([f'<span class="number-highlight">{n}</span>' for n, p in items])
 def html_badge(items, cls): return f'<span class="{cls}">' + " &nbsp;•&nbsp; ".join([str(n) for n, p in items]) + '</span>'
 def nums_prob(items): return " | ".join(f"{n} ({p:.1%})" for n, p in items)
@@ -571,7 +470,7 @@ selected_lotto = c1.selectbox("🎯 เลือกหวย", list(LOTTERY_SOUR
 day_options = {"อัตโนมัติ": None, "วันจันทร์": 0, "วันอังคาร": 1, "วันพุธ": 2, "วันพฤหัสบดี": 3, "วันศุกร์": 4, "วันเสาร์": 5, "วันอาทิตย์": 6}
 day_label = c2.selectbox("📅 วันออกรางวัล", list(day_options.keys()), key="day_opt")
 
-if st.button("❄️ เริ่มวิเคราะห์ V.MAX HYBRID", type="primary", use_container_width=True):
+if st.button("❄️ เริ่มวิเคราะห์ V.MAX HYBRID (Fast Mode)", type="primary", use_container_width=True):
     progress_bar, status_text = st.progress(0), st.empty()
     status_text.markdown("⏳ **Step 1/4:** โหลดและคลีนข้อมูล (Caching)...")
     
@@ -582,8 +481,8 @@ if st.button("❄️ เริ่มวิเคราะห์ V.MAX HYBRID", t
     progress_bar.progress(15)
 
     engine = EnsembleEngine(df, selected_lotto, day_options[day_label])
-    preds, next_date = engine.predict_all(progress_bar, status_text)
-    past_records = engine.evaluate_past_10(progress_bar, status_text)
+    preds, next_date, ext_df = engine.predict_all(progress_bar, status_text)
+    past_records = engine.evaluate_past_10(ext_df, preds, progress_bar, status_text)
 
     status_text.empty()
     progress_bar.empty()
@@ -629,8 +528,7 @@ if st.button("❄️ เริ่มวิเคราะห์ V.MAX HYBRID", t
         st.subheader("📜 ประวัติย้อนหลัง 10 งวด (Backtest เลขดับแยกทุกหลัก)")
         
         def get_mark(hit, actual):
-            if hit:
-                return f"✅ <span style='color:green;font-weight:bold;'>ดับอยู่ (ไม่มา)</span>"
+            if hit: return f"✅ <span style='color:green;font-weight:bold;'>ดับอยู่ (ไม่มา)</span>"
             return f"❌ <span style='color:red;'>ดับหลุด (มา {actual})</span>"
 
         for rec in past_records:
@@ -650,5 +548,5 @@ if st.button("❄️ เริ่มวิเคราะห์ V.MAX HYBRID", t
                 </div>
             """, unsafe_allow_html=True)
 
-    st.success("✅ วิเคราะห์เสร็จสิ้น • Vectorized Engine ทำงานรวดเร็วและมีประสิทธิภาพสูง")
+    st.success("✅ วิเคราะห์เสร็จสิ้น • Vectorized Engine + Fast Mode ทำงานรวดเร็วและมีประสิทธิภาพสูง")
     st.caption("⚠️ เปอร์เซ็นต์ (Probability) เป็นคะแนนความน่าจะเป็นเชิงสถิติของโมเดล ไม่ใช่การรับประกันผลรางวัลจริง")
