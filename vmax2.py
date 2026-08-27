@@ -1,44 +1,43 @@
 # ============================================================
-# 🚀 LOTTO AI V.MAX HYBRID SPEED-STABLE
+# 🚀 LOTTO AI V.MAX HYBRID
+# TOP-3 EVERY POSITION + TOP-5 OVERALL + 10-DRAW HISTORY
 # ============================================================
 #
+# AI:
+#   RandomForest
+#   ExtraTrees
+#   HistGradientBoosting
+#
+# STATISTICS:
+#   Frequency
+#   Transition
+#   Pattern
+#
+# EQUATION:
+#   L1, L2, L3, L5
+#   + / -
+#   ABS
+#   weighted voting
+#
+# VALIDATION:
+#   Strict Causal
+#   Walk-Forward
+#   Stability
+#
 # OUTPUT:
-#   ✅ เลขเด่น TOP-3 แยกแต่ละหลัก
-#   ✅ สรุปเลขเด่นบน TOP-5
-#   ✅ สรุปเลขเด่นล่าง TOP-5
-#   ❌ ไม่แสดง AI / Frequency / Transition / Pattern / Equation แยก
-#
-# ENGINE:
-#   AI:
-#       RandomForest
-#       ExtraTrees
-#       HistGradientBoosting
-#
-#   STATISTICS:
-#       Frequency
-#       Transition
-#       Pattern
-#
-#   EQUATION:
-#       24 Core Equations
-#       Strict causal
-#       Stability filtering
-#
-#   ENSEMBLE:
-#       Walk-Forward
-#       Recent Skill
-#       Stability
-#       Consensus Bonus
+#   TOP-3 ทุกหลัก
+#   TOP-5 บน
+#   TOP-5 ล่าง
+#   ประวัติย้อนหลัง 10 งวด
 #
 # DESIGN:
 #   NO Calendar
-#   NO Day / Month
-#   NO fixed equation
-#   NO persistent model
-#   NO joblib
-#   Leakage-safe
-#   Mobile optimized
-#
+#   NO Day
+#   NO Month
+#   NO Persistent Model
+#   NO Joblib
+#   Leakage Safe
+#   Mobile Optimized
 # ============================================================
 
 import streamlit as st
@@ -60,18 +59,18 @@ warnings.filterwarnings("ignore")
 
 
 # ============================================================
-# 0. STREAMLIT CONFIG
+# 0. CONFIG
 # ============================================================
 
 st.set_page_config(
-    page_title="Lotto AI V.MAX Speed-Stable",
+    page_title="Lotto AI V.MAX",
     page_icon="🚀",
     layout="centered"
 )
 
 
 # ============================================================
-# 1. LOTTERY SOURCES
+# 1. SOURCES
 # ============================================================
 
 LOTTERY_SOURCES = {
@@ -100,7 +99,7 @@ st.markdown(
         font-size: 30px;
         font-weight: 800;
         text-align: center;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
     }
 
     .sub-title {
@@ -110,49 +109,73 @@ st.markdown(
         margin-bottom: 15px;
     }
 
-    .position-title {
-        font-size: 18px;
+    .section-title {
+        font-size: 19px;
         font-weight: 800;
-        margin-top: 16px;
+        margin-top: 15px;
         margin-bottom: 8px;
     }
 
-    .hot-card {
-        padding: 14px;
-        border-radius: 14px;
+    .position-card {
         border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 12px;
+        margin: 7px 0;
+        text-align: center;
+    }
+
+    .position-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .top-number {
+        font-size: 27px;
+        font-weight: 800;
+        margin: 0 5px;
+    }
+
+    .prob {
+        font-size: 11px;
+        color: #888;
+    }
+
+    .overall-card {
+        border: 1px solid #ddd;
+        border-radius: 14px;
+        padding: 15px;
+        margin: 8px 0;
+        text-align: center;
+    }
+
+    .overall-number {
+        font-size: 29px;
+        font-weight: 800;
+        margin: 0 5px;
+    }
+
+    .history-card {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 11px;
         margin: 8px 0;
     }
 
-    .top3-number {
-        font-size: 28px;
+    .history-date {
         font-weight: 800;
-        padding: 5px 12px;
+        font-size: 14px;
+        margin-bottom: 6px;
     }
 
-    .top5-number {
-        font-size: 28px;
-        font-weight: 800;
-        padding: 5px 10px;
-    }
-
-    .dot-sep {
-        color: #999;
-        margin: 0 4px;
-    }
-
-    .confidence {
+    .history-line {
         font-size: 13px;
-        color: #888;
-        text-align: center;
-        margin-top: 5px;
+        margin: 3px 0;
     }
 
-    .small-info {
-        font-size: 12px;
-        color: #888;
-        text-align: center;
-        margin-top: 6px;
+    .real {
+        font-weight: 800;
     }
 
     </style>
@@ -172,10 +195,10 @@ def fetch_and_clean_data(url):
 
         headers = {
             "User-Agent":
-                "Mozilla/5.0 (Linux; Android 10) "
-                "AppleWebKit/537.36 "
-                "(KHTML, like Gecko) "
-                "Chrome/120.0 Mobile Safari/537.36"
+            "Mozilla/5.0 (Linux; Android 10) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/120.0 Mobile Safari/537.36"
         }
 
         response = requests.get(
@@ -215,7 +238,9 @@ def fetch_and_clean_data(url):
             r"\b(\d{5,6})\b.*?\b(\d{2})\b"
         )
 
-        current_date = pd.Timestamp(datetime.now())
+        current_date = pd.Timestamp(
+            datetime.now()
+        )
 
         rows = []
 
@@ -240,7 +265,7 @@ def fetch_and_clean_data(url):
                     if not pd.isna(d):
                         current_date = d
 
-                except Exception:
+                except:
                     pass
 
             nm = num_pattern.search(line)
@@ -261,11 +286,13 @@ def fetch_and_clean_data(url):
             else:
                 continue
 
-            rows.append({
-                "Date": current_date,
-                "Result_3D": str(r3).zfill(3),
-                "Result_2D": str(r2).zfill(2)
-            })
+            rows.append(
+                {
+                    "Date": current_date,
+                    "Result_3D": str(r3).zfill(3),
+                    "Result_2D": str(r2).zfill(2)
+                }
+            )
 
         if len(rows) < 10:
             raise ValueError(
@@ -320,35 +347,19 @@ def build_features(
     x["T2"] = r2.str[0].astype(np.int8)
     x["O2"] = r2.str[1].astype(np.int8)
 
-    # --------------------------------------------------------
-    # Previous 3D structure
-    # --------------------------------------------------------
-
     ph = x["H"].shift(1)
     pt = x["T"].shift(1)
     po = x["O"].shift(1)
 
-    x["PrevSum"] = (
-        ph + pt + po
-    )
-
+    x["PrevSum"] = ph + pt + po
     x["PrevOdd"] = (
         (ph % 2) +
         (pt % 2) +
         (po % 2)
     )
 
-    x["DistHT"] = (
-        ph - pt
-    ).abs()
-
-    x["DistTO"] = (
-        pt - po
-    ).abs()
-
-    # --------------------------------------------------------
-    # Position features
-    # --------------------------------------------------------
+    x["DistHT"] = (ph - pt).abs()
+    x["DistTO"] = (pt - po).abs()
 
     for pos in [
         "H",
@@ -364,15 +375,15 @@ def build_features(
 
         x[f"Odd_{pos}"] = (
             prev % 2
-        ).astype(np.float32)
+        )
 
         x[f"High_{pos}"] = (
             prev >= 5
-        ).astype(np.float32)
+        ).astype(np.int8)
 
         x[f"Prime_{pos}"] = (
             prev.isin([2, 3, 5, 7])
-        ).astype(np.float32)
+        ).astype(np.int8)
 
         for lag in lags:
 
@@ -413,8 +424,11 @@ def build_features(
             v = int(val)
 
             if last[v] < 0:
+
                 raw_skip[i] = i
+
             else:
+
                 raw_skip[i] = (
                     i - last[v]
                 )
@@ -444,7 +458,11 @@ def build_features(
 
 class FrequencyEngine:
 
-    def analyze(self, df, pos):
+    def analyze(
+        self,
+        df,
+        pos
+    ):
 
         s = df[pos].astype(int)
 
@@ -453,27 +471,34 @@ class FrequencyEngine:
 
         r15 = (
             s.tail(15)
-            .value_counts(normalize=True)
+            .value_counts(
+                normalize=True
+            )
         )
 
         r30 = (
             s.tail(30)
-            .value_counts(normalize=True)
+            .value_counts(
+                normalize=True
+            )
         )
 
         all_f = (
-            s.value_counts(normalize=True)
+            s.value_counts(
+                normalize=True
+            )
         )
 
-        score = np.array([
-
-            r15.get(d, 0) * 0.55 +
-            r30.get(d, 0) * 0.30 +
-            all_f.get(d, 0) * 0.15
-
-            for d in range(10)
-
-        ])
+        score = np.array(
+            [
+                r15.get(d, 0) * 0.55
+                +
+                r30.get(d, 0) * 0.30
+                +
+                all_f.get(d, 0) * 0.15
+                for d in range(10)
+            ]
+        )
 
         score += 0.01
 
@@ -489,38 +514,40 @@ class FrequencyEngine:
 
 class TransitionEngine:
 
-    def analyze(self, df, pos):
+    def analyze(
+        self,
+        df,
+        pos
+    ):
 
         if len(df) < 6:
             return np.ones(10) / 10
 
-        s = df[pos].astype(int)
-
         current = int(
-            s.iloc[-1]
+            df[pos].iloc[-1]
         )
 
-        previous = s.shift(1)
-
-        mask = (
-            previous == current
-        )
-
-        subset = s[mask]
+        subset = df[
+            df[pos].shift(1)
+            == current
+        ]
 
         if len(subset) < 2:
             return np.ones(10) / 10
 
         freq = (
-            subset.value_counts(
+            subset[pos]
+            .value_counts(
                 normalize=True
             )
         )
 
-        score = np.array([
-            freq.get(d, 0)
-            for d in range(10)
-        ])
+        score = np.array(
+            [
+                freq.get(d, 0)
+                for d in range(10)
+            ]
+        )
 
         score += 0.01
 
@@ -536,50 +563,52 @@ class TransitionEngine:
 
 class PatternEngine:
 
-    def analyze(self, df, pos):
+    def analyze(
+        self,
+        df,
+        pos
+    ):
 
         if len(df) < 7:
             return np.ones(10) / 10
 
-        s = df[pos].astype(int)
-
         a = int(
-            s.iloc[-1]
+            df[pos].iloc[-1]
         )
 
         b = int(
-            s.iloc[-2]
+            df[pos].iloc[-2]
         )
 
-        previous_1 = s.shift(1)
-        previous_2 = s.shift(2)
-
-        mask = (
-            (previous_1 == a) &
-            (previous_2 == b)
-        )
-
-        subset = s[mask]
+        subset = df[
+            (df[pos].shift(1) == a)
+            &
+            (df[pos].shift(2) == b)
+        ]
 
         if len(subset) < 2:
 
-            subset = s[
-                previous_1 == a
+            subset = df[
+                df[pos].shift(1)
+                == a
             ]
 
         if len(subset) < 1:
             return np.ones(10) / 10
 
         freq = (
-            subset.value_counts(
+            subset[pos]
+            .value_counts(
                 normalize=True
             )
         )
 
-        score = np.array([
-            freq.get(d, 0)
-            for d in range(10)
-        ])
+        score = np.array(
+            [
+                freq.get(d, 0)
+                for d in range(10)
+            ]
+        )
 
         score += 0.01
 
@@ -603,9 +632,9 @@ class EquationEngine:
 
     def _build_equations(self):
 
-        return [
+        eq = []
 
-            # Copy
+        eq += [
             (
                 "L1",
                 lambda a,b,c,d: a
@@ -621,9 +650,10 @@ class EquationEngine:
             (
                 "L5",
                 lambda a,b,c,d: d
-            ),
+            )
+        ]
 
-            # Sum
+        eq += [
             (
                 "L1+L2",
                 lambda a,b,c,d: a+b
@@ -647,66 +677,160 @@ class EquationEngine:
             (
                 "L3+L5",
                 lambda a,b,c,d: c+d
-            ),
+            )
+        ]
 
-            # Difference
+        eq += [
+            (
+                "L1-L2",
+                lambda a,b,c,d: a-b
+            ),
+            (
+                "L1-L3",
+                lambda a,b,c,d: a-c
+            ),
+            (
+                "L1-L5",
+                lambda a,b,c,d: a-d
+            ),
+            (
+                "L2-L3",
+                lambda a,b,c,d: b-c
+            ),
+            (
+                "L2-L5",
+                lambda a,b,c,d: b-d
+            ),
+            (
+                "L3-L5",
+                lambda a,b,c,d: c-d
+            )
+        ]
+
+        eq += [
             (
                 "ABS(L1-L2)",
-                lambda a,b,c,d: abs(a-b)
+                lambda a,b,c,d:
+                    abs(a-b)
             ),
             (
                 "ABS(L1-L3)",
-                lambda a,b,c,d: abs(a-c)
+                lambda a,b,c,d:
+                    abs(a-c)
             ),
             (
                 "ABS(L1-L5)",
-                lambda a,b,c,d: abs(a-d)
+                lambda a,b,c,d:
+                    abs(a-d)
             ),
             (
                 "ABS(L2-L3)",
-                lambda a,b,c,d: abs(b-c)
+                lambda a,b,c,d:
+                    abs(b-c)
             ),
             (
                 "ABS(L2-L5)",
-                lambda a,b,c,d: abs(b-d)
+                lambda a,b,c,d:
+                    abs(b-d)
             ),
             (
                 "ABS(L3-L5)",
-                lambda a,b,c,d: abs(c-d)
-            ),
+                lambda a,b,c,d:
+                    abs(c-d)
+            )
+        ]
 
-            # Weighted
+        eq += [
+            (
+                "L1+L2+L3",
+                lambda a,b,c,d:
+                    a+b+c
+            ),
+            (
+                "L1+L3+L5",
+                lambda a,b,c,d:
+                    a+c+d
+            ),
+            (
+                "L1+L2+L5",
+                lambda a,b,c,d:
+                    a+b+d
+            )
+        ]
+
+        eq += [
             (
                 "2L1+L2",
-                lambda a,b,c,d: 2*a+b
+                lambda a,b,c,d:
+                    2*a+b
             ),
             (
                 "L1+2L2",
-                lambda a,b,c,d: a+2*b
+                lambda a,b,c,d:
+                    a+2*b
             ),
             (
                 "2L1+L3",
-                lambda a,b,c,d: 2*a+c
+                lambda a,b,c,d:
+                    2*a+c
             ),
             (
                 "L1+2L3",
-                lambda a,b,c,d: a+2*c
+                lambda a,b,c,d:
+                    a+2*c
             ),
             (
                 "2L1+L5",
-                lambda a,b,c,d: 2*a+d
+                lambda a,b,c,d:
+                    2*a+d
             ),
             (
                 "L1+2L5",
-                lambda a,b,c,d: a+2*d
+                lambda a,b,c,d:
+                    a+2*d
             )
         ]
+
+        return eq
+
+    def _lags(
+        self,
+        df,
+        pos,
+        idx
+    ):
+
+        if idx < 5:
+            return None
+
+        return (
+            int(df[pos].iloc[idx-1]),
+            int(df[pos].iloc[idx-2]),
+            int(df[pos].iloc[idx-3]),
+            int(df[pos].iloc[idx-5])
+        )
+
+    def _predict(
+        self,
+        fn,
+        vals
+    ):
+
+        try:
+
+            return int(
+                fn(*vals)
+            ) % 10
+
+        except:
+
+            return -1
 
     def discover(
         self,
         df,
         pos,
-        bt=8
+        bt=10
     ):
 
         n = len(df)
@@ -716,177 +840,154 @@ class EquationEngine:
             return {
                 "prob":
                     np.ones(10) / 10,
-                "strength": 0.0,
-                "stable": 0,
-                "total":
-                    len(self.equations)
+                "strength": 0.0
             }
-
-        s = (
-            df[pos]
-            .astype(int)
-            .to_numpy()
-        )
 
         start = max(
             35,
             n - bt
         )
 
-        # ----------------------------------------------------
-        # Pre-calculate lags
-        # ----------------------------------------------------
-
-        L1 = s[start-1:n-1]
-
-        L2 = s[start-2:n-2]
-
-        L3 = s[start-3:n-3]
-
-        L5 = s[start-5:n-5]
-
-        actual = s[start:n]
-
         results = []
-
-        total_count = len(actual)
 
         for name, fn in self.equations:
 
-            try:
+            hits = 0
+            total = 0
 
-                pred = np.array([
-                    fn(
-                        int(a),
-                        int(b),
-                        int(c),
-                        int(d)
-                    ) % 10
-                    for a,b,c,d in zip(
-                        L1,
-                        L2,
-                        L3,
-                        L5
+            recent_hits = 0
+            recent_total = 0
+
+            for idx in range(
+                start,
+                n
+            ):
+
+                vals = self._lags(
+                    df,
+                    pos,
+                    idx
+                )
+
+                if vals is None:
+                    continue
+
+                pred = self._predict(
+                    fn,
+                    vals
+                )
+
+                if pred < 0:
+                    continue
+
+                actual = int(
+                    df[pos].iloc[idx]
+                )
+
+                total += 1
+
+                if pred == actual:
+
+                    hits += 1
+
+                    if idx >= n - 5:
+                        recent_hits += 1
+
+                if idx >= n - 5:
+                    recent_total += 1
+
+            if total == 0:
+                continue
+
+            hit = hits / total
+
+            recent = (
+                recent_hits /
+                recent_total
+                if recent_total > 0
+                else 0
+            )
+
+            if (
+                hit >= 0.10
+                and
+                recent >= 0.10
+            ):
+
+                score = (
+                    0.70 * hit
+                    +
+                    0.30 * recent
+                )
+
+                results.append(
+                    (
+                        name,
+                        fn,
+                        hit,
+                        recent,
+                        score
                     )
-                ])
-
-            except Exception:
-                continue
-
-            if len(pred) == 0:
-                continue
-
-            hits = (
-                pred == actual
-            )
-
-            hit_rate = (
-                float(hits.mean())
-            )
-
-            recent_n = min(
-                5,
-                len(hits)
-            )
-
-            recent_rate = float(
-                hits[-recent_n:].mean()
-            )
-
-            # ------------------------------------------------
-            # Minimum sample / stability
-            # ------------------------------------------------
-
-            stable = (
-                total_count >= 6 and
-                hit_rate >= 0.10 and
-                recent_rate >= 0.10
-            )
-
-            if not stable:
-                continue
-
-            score = (
-                0.55 * hit_rate +
-                0.45 * recent_rate
-            )
-
-            results.append({
-                "name": name,
-                "fn": fn,
-                "hit": hit_rate,
-                "recent": recent_rate,
-                "score": score
-            })
+                )
 
         if not results:
 
             return {
                 "prob":
                     np.ones(10) / 10,
-                "strength": 0.0,
-                "stable": 0,
-                "total":
-                    len(self.equations)
+                "strength": 0.0
             }
 
         results.sort(
-            key=lambda x: x["score"],
+            key=lambda x: x[4],
             reverse=True
         )
 
-        # ----------------------------------------------------
-        # Top 6 stable equations
-        # ----------------------------------------------------
+        selected = results[:8]
 
-        selected = results[:6]
-
-        # ----------------------------------------------------
-        # Current lags
-        # ----------------------------------------------------
-
-        vals = (
-            int(s[-1]),
-            int(s[-2]),
-            int(s[-3]),
-            int(s[-5])
+        vals = self._lags(
+            df,
+            pos,
+            n
         )
+
+        if vals is None:
+
+            return {
+                "prob":
+                    np.ones(10) / 10,
+                "strength": 0.0
+            }
 
         prob = np.zeros(10)
 
-        total_weight = 0.0
+        total_weight = 0
 
-        predictions = []
+        strengths = []
 
-        for r in selected:
+        for name, fn, hit, recent, score in selected:
 
-            try:
+            pred = self._predict(
+                fn,
+                vals
+            )
 
-                pred = int(
-                    r["fn"](*vals)
-                ) % 10
-
-            except Exception:
+            if pred < 0:
                 continue
 
             weight = (
-                0.50 +
-                r["score"]
+                0.50 + score
             )
 
             prob[pred] += weight
 
             total_weight += weight
 
-            predictions.append(
-                pred
-            )
+            strengths.append(hit)
 
         if total_weight <= 0:
 
-            prob = (
-                np.ones(10) / 10
-            )
+            prob = np.ones(10) / 10
 
         else:
 
@@ -896,50 +997,19 @@ class EquationEngine:
 
             prob /= prob.sum()
 
-        # ----------------------------------------------------
-        # Consensus bonus
-        # ----------------------------------------------------
-
-        if predictions:
-
-            counts = np.bincount(
-                predictions,
-                minlength=10
-            )
-
-            consensus = (
-                counts /
-                max(
-                    1,
-                    len(predictions)
-                )
-            )
-
-            prob *= (
-                1.0 +
-                0.20 * consensus
-            )
-
-            prob /= prob.sum()
-
-        strength = float(
-            np.mean([
-                r["score"]
-                for r in selected
-            ])
-        )
-
         return {
             "prob": prob,
-            "strength": strength,
-            "stable": len(selected),
-            "total":
-                len(self.equations)
+            "strength":
+                float(
+                    np.mean(strengths)
+                    if strengths
+                    else 0
+                )
         }
 
 
 # ============================================================
-# 9. AI ENGINE
+# 9. AI
 # ============================================================
 
 class FastAI:
@@ -964,45 +1034,33 @@ class FastAI:
         X_next
     ):
 
-        result = np.zeros(10)
-
         rf_w, et_w, hgb_w = (
             self.weights
         )
 
-        total_w = 0.0
+        result = np.zeros(10)
+
+        total_w = 0
 
         # ----------------------------------------------------
         # RF
         # ----------------------------------------------------
 
         model = RandomForestClassifier(
-
             n_estimators=self.trees,
-
             max_depth=6,
-
             min_samples_leaf=3,
-
             max_features="sqrt",
-
-            class_weight=None,
-
+            class_weight="balanced",
             n_jobs=-1,
-
             random_state=42
-
         )
 
-        model.fit(
-            X,
-            y
-        )
+        model.fit(X, y)
 
-        proba = (
-            model
-            .predict_proba(X_next)[0]
-        )
+        proba = model.predict_proba(
+            X_next
+        )[0]
 
         for c, p in zip(
             model.classes_,
@@ -1020,32 +1078,20 @@ class FastAI:
         # ----------------------------------------------------
 
         model = ExtraTreesClassifier(
-
             n_estimators=self.trees,
-
             max_depth=6,
-
             min_samples_leaf=3,
-
             max_features="sqrt",
-
-            class_weight=None,
-
+            class_weight="balanced",
             n_jobs=-1,
-
             random_state=43
-
         )
 
-        model.fit(
-            X,
-            y
-        )
+        model.fit(X, y)
 
-        proba = (
-            model
-            .predict_proba(X_next)[0]
-        )
+        proba = model.predict_proba(
+            X_next
+        )[0]
 
         for c, p in zip(
             model.classes_,
@@ -1063,30 +1109,19 @@ class FastAI:
         # ----------------------------------------------------
 
         model = HistGradientBoostingClassifier(
-
-            max_iter=65,
-
+            max_iter=70,
             learning_rate=0.05,
-
             max_leaf_nodes=15,
-
             min_samples_leaf=3,
-
             l2_regularization=0.5,
-
             random_state=44
-
         )
 
-        model.fit(
-            X,
-            y
-        )
+        model.fit(X, y)
 
-        proba = (
-            model
-            .predict_proba(X_next)[0]
-        )
+        proba = model.predict_proba(
+            X_next
+        )[0]
 
         for c, p in zip(
             model.classes_,
@@ -1100,10 +1135,7 @@ class FastAI:
         total_w += hgb_w
 
         if total_w <= 0:
-
-            return (
-                np.ones(10) / 10
-            )
+            return np.ones(10) / 10
 
         result /= total_w
 
@@ -1116,7 +1148,7 @@ class FastAI:
 
 
 # ============================================================
-# 10. ENSEMBLE ENGINE
+# 10. ENSEMBLE
 # ============================================================
 
 class EnsembleEngine:
@@ -1141,22 +1173,22 @@ class EnsembleEngine:
         n = len(df)
 
         # ----------------------------------------------------
-        # Adaptive configuration
+        # SPEED CONFIG
         # ----------------------------------------------------
 
         if n >= 700:
 
-            self.trees = 55
+            self.trees = 45
             self.bt = 10
 
         elif n >= 400:
 
-            self.trees = 50
+            self.trees = 40
             self.bt = 9
 
         else:
 
-            self.trees = 45
+            self.trees = 35
             self.bt = 8
 
         self.lags = [
@@ -1167,17 +1199,11 @@ class EnsembleEngine:
             3, 5, 10
         ]
 
-        # ----------------------------------------------------
-        # Features
-        # ----------------------------------------------------
-
         self.features = [
-
             "PrevSum",
             "PrevOdd",
             "DistHT",
             "DistTO"
-
         ]
 
         for pos in [
@@ -1188,14 +1214,14 @@ class EnsembleEngine:
             "O2"
         ]:
 
-            self.features.extend([
-
-                f"Odd_{pos}",
-                f"High_{pos}",
-                f"Prime_{pos}",
-                f"Skip_{pos}"
-
-            ])
+            self.features.extend(
+                [
+                    f"Odd_{pos}",
+                    f"High_{pos}",
+                    f"Prime_{pos}",
+                    f"Skip_{pos}"
+                ]
+            )
 
             for lag in self.lags:
 
@@ -1208,10 +1234,6 @@ class EnsembleEngine:
                 self.features.append(
                     f"RM{w}_{pos}"
                 )
-
-        # ----------------------------------------------------
-        # Engines
-        # ----------------------------------------------------
 
         self.freq = (
             FrequencyEngine()
@@ -1234,7 +1256,7 @@ class EnsembleEngine:
         )
 
         # ----------------------------------------------------
-        # Base weights
+        # BASE WEIGHT
         # ----------------------------------------------------
 
         self.base_weights = {
@@ -1248,14 +1270,14 @@ class EnsembleEngine:
             "Pattern": 0.08,
 
             "Eq": 0.12
-
         }
+
 
     # ========================================================
     # FAST WALK-FORWARD
     # ========================================================
 
-    def fast_backtest(
+    def backtest(
         self,
         pos,
         X,
@@ -1276,253 +1298,202 @@ class EnsembleEngine:
         )
 
         scores = {
-            "AI": [],
-            "Freq": [],
-            "ST": [],
-            "Pattern": [],
-            "Eq": []
+            "AI": 0,
+            "Freq": 0,
+            "ST": 0,
+            "Pattern": 0,
+            "Eq": 0
         }
 
+        total_decay = 0
+
         # ----------------------------------------------------
-        # Lightweight WF
+        # ใช้ TOP-5 validation
         # ----------------------------------------------------
 
-        for idx in range(
-            start,
-            n
+        for step, idx in enumerate(
+            range(start, n)
         ):
 
-            actual = int(
-                df_hist[pos].iloc[idx]
+            decay = (
+                1.08 ** step
             )
 
-            hist = (
-                df_hist.iloc[:idx]
+            total_decay += decay
+
+            Xtr = X.iloc[:idx]
+
+            ytr = (
+                df_hist[pos]
+                .iloc[:idx]
             )
-
-            # ------------------------------------------------
-            # Frequency
-            # ------------------------------------------------
-
-            f = self.freq.analyze(
-                hist,
-                pos
-            )
-
-            scores["Freq"].append(
-                int(
-                    actual in
-                    np.argsort(f)[::-1][:5]
-                )
-            )
-
-            # ------------------------------------------------
-            # Transition
-            # ------------------------------------------------
-
-            t = self.transition.analyze(
-                hist,
-                pos
-            )
-
-            scores["ST"].append(
-                int(
-                    actual in
-                    np.argsort(t)[::-1][:5]
-                )
-            )
-
-            # ------------------------------------------------
-            # Pattern
-            # ------------------------------------------------
-
-            p = self.pattern.analyze(
-                hist,
-                pos
-            )
-
-            scores["Pattern"].append(
-                int(
-                    actual in
-                    np.argsort(p)[::-1][:5]
-                )
-            )
-
-            # ------------------------------------------------
-            # Equation
-            # ------------------------------------------------
-
-            eq = self.equation.discover(
-                hist,
-                pos,
-                bt=min(
-                    6,
-                    max(
-                        5,
-                        idx - 35
-                    )
-                )
-            )
-
-            scores["Eq"].append(
-                int(
-                    actual in
-                    np.argsort(
-                        eq["prob"]
-                    )[::-1][:5]
-                )
-            )
-
-        # ----------------------------------------------------
-        # AI only on latest WF point
-        # ----------------------------------------------------
-
-        try:
-
-            idx = n - 1
-
-            Xtr = X.iloc[
-                :idx
-            ]
-
-            ytr = df_hist[pos].iloc[
-                :idx
-            ]
 
             xt = X.iloc[
                 [idx]
             ]
 
-            model = ExtraTreesClassifier(
-
-                n_estimators=12,
-
-                max_depth=5,
-
-                min_samples_leaf=3,
-
-                max_features="sqrt",
-
-                class_weight=None,
-
-                n_jobs=-1,
-
-                random_state=777
-
+            actual = int(
+                df_hist[pos]
+                .iloc[idx]
             )
 
-            model.fit(
-                Xtr,
-                ytr
-            )
+            # ------------------------------------------------
+            # AI PROXY
+            # ------------------------------------------------
 
-            proba = (
-                model
-                .predict_proba(xt)[0]
-            )
+            try:
 
-            ai_top = [
-                int(c)
-                for c in
-                model.classes_[
-                    np.argsort(proba)[::-1]
-                ][:5]
+                proxy = ExtraTreesClassifier(
+                    n_estimators=8,
+                    max_depth=5,
+                    min_samples_leaf=3,
+                    max_features="sqrt",
+                    n_jobs=-1,
+                    random_state=200 + step
+                )
+
+                proxy.fit(
+                    Xtr,
+                    ytr
+                )
+
+                proba = proxy.predict_proba(
+                    xt
+                )[0]
+
+                tmp = np.zeros(10)
+
+                for c, p in zip(
+                    proxy.classes_,
+                    proba
+                ):
+
+                    tmp[int(c)] = p
+
+                if actual in np.argsort(
+                    tmp
+                )[::-1][:5]:
+
+                    scores["AI"] += decay
+
+            except:
+                pass
+
+            # ------------------------------------------------
+            # FREQUENCY
+            # ------------------------------------------------
+
+            hist = df_hist.iloc[
+                :idx
             ]
 
-            actual = int(
-                df_hist[pos].iloc[-1]
+            fq = self.freq.analyze(
+                hist,
+                pos
             )
 
-            scores["AI"].append(
-                int(
-                    actual in ai_top
+            if actual in np.argsort(
+                fq
+            )[::-1][:5]:
+
+                scores["Freq"] += decay
+
+            # ------------------------------------------------
+            # TRANSITION
+            # ------------------------------------------------
+
+            stp = (
+                self.transition.analyze(
+                    hist,
+                    pos
                 )
             )
 
-        except Exception:
+            if actual in np.argsort(
+                stp
+            )[::-1][:5]:
 
-            scores["AI"].append(
-                0
+                scores["ST"] += decay
+
+            # ------------------------------------------------
+            # PATTERN
+            # ------------------------------------------------
+
+            ptn = (
+                self.pattern.analyze(
+                    hist,
+                    pos
+                )
             )
 
-        # ----------------------------------------------------
-        # Calculate adaptive weights
-        # ----------------------------------------------------
+            if actual in np.argsort(
+                ptn
+            )[::-1][:5]:
 
-        skill = {}
+                scores["Pattern"] += decay
 
-        for k, vals in scores.items():
+            # ------------------------------------------------
+            # EQUATION
+            # ------------------------------------------------
 
-            if vals:
-
-                arr = np.array(
-                    vals,
-                    dtype=float
-                )
-
-                recent_n = min(
-                    5,
-                    len(arr)
-                )
-
-                recent = float(
-                    arr[-recent_n:].mean()
-                )
-
-                overall = float(
-                    arr.mean()
-                )
-
-                # Stability
-                stability = float(
-                    1.0 -
-                    np.std(arr)
-                )
-
-                stability = float(
-                    np.clip(
-                        stability,
-                        0.40,
-                        1.00
+            eq_result = (
+                self.equation.discover(
+                    hist,
+                    pos,
+                    bt=min(
+                        8,
+                        max(
+                            5,
+                            idx - 35
+                        )
                     )
                 )
+            )
 
-                skill[k] = (
+            eq = eq_result["prob"]
 
-                    0.50 * overall +
+            if actual in np.argsort(
+                eq
+            )[::-1][:5]:
 
-                    0.30 * recent +
+                scores["Eq"] += decay
 
-                    0.20 * stability
+        if total_decay <= 0:
 
-                )
+            return (
+                self.base_weights.copy()
+            )
 
-            else:
+        accuracy = {
+            k:
+            scores[k] /
+            total_decay
 
-                skill[k] = 0.50
+            for k in scores
+        }
 
         # ----------------------------------------------------
-        # Adaptive weight
+        # ADAPTIVE WEIGHT
         # ----------------------------------------------------
 
         weighted = {}
 
         for k in self.base_weights:
 
+            adaptive = max(
+                0.10,
+                accuracy[k]
+            )
+
             weighted[k] = (
-
-                self.base_weights[k] *
-
+                self.base_weights[k]
+                *
                 (
-                    0.45 +
-                    0.55 *
-                    np.clip(
-                        skill[k],
-                        0.10,
-                        1.00
-                    )
+                    0.35
+                    +
+                    0.65 *
+                    adaptive
                 )
-
             )
 
         total = sum(
@@ -1536,35 +1507,34 @@ class EnsembleEngine:
             )
 
         weights = {
+            k:
+            v / total
 
-            k: v / total
-
-            for k, v in
-            weighted.items()
-
+            for k, v
+            in weighted.items()
         }
 
         # ----------------------------------------------------
-        # AI cap
+        # จำกัด AI สูงสุด 58%
         # ----------------------------------------------------
 
         if weights["AI"] > 0.58:
 
             diff = (
-                weights["AI"] -
-                0.58
+                weights["AI"]
+                - 0.58
             )
 
             weights["AI"] = 0.58
 
-            others = sum(
+            other_sum = sum(
                 v
-                for k, v in
-                weights.items()
+                for k, v
+                in weights.items()
                 if k != "AI"
             )
 
-            if others > 0:
+            if other_sum > 0:
 
                 for k in weights:
 
@@ -1572,14 +1542,18 @@ class EnsembleEngine:
 
                         weights[k] += (
                             diff *
-                            weights[k] /
-                            others
+                            (
+                                weights[k]
+                                /
+                                other_sum
+                            )
                         )
 
         return weights
 
+
     # ========================================================
-    # POSITION
+    # PROCESS POSITION
     # ========================================================
 
     def process_position(
@@ -1590,11 +1564,7 @@ class EnsembleEngine:
         X_next
     ):
 
-        # ----------------------------------------------------
-        # Dynamic weight
-        # ----------------------------------------------------
-
-        weights = self.fast_backtest(
+        weights = self.backtest(
             pos,
             X,
             hist
@@ -1619,14 +1589,18 @@ class EnsembleEngine:
             pos
         )
 
-        stp = self.transition.analyze(
-            hist,
-            pos
+        stp = (
+            self.transition.analyze(
+                hist,
+                pos
+            )
         )
 
-        ptn = self.pattern.analyze(
-            hist,
-            pos
+        ptn = (
+            self.pattern.analyze(
+                hist,
+                pos
+            )
         )
 
         # ----------------------------------------------------
@@ -1644,121 +1618,54 @@ class EnsembleEngine:
         eq = eq_result["prob"]
 
         # ----------------------------------------------------
-        # Consensus
-        # ----------------------------------------------------
-
-        engines = np.vstack([
-            ai,
-            fq,
-            stp,
-            ptn,
-            eq
-        ])
-
-        mean_prob = (
-            engines.mean(axis=0)
-        )
-
-        std_prob = (
-            engines.std(axis=0)
-        )
-
-        # ----------------------------------------------------
-        # Main ensemble
+        # FINAL
         # ----------------------------------------------------
 
         final = (
 
-            weights["AI"] *
-            ai
+            weights["AI"] * ai
 
             +
 
-            weights["Freq"] *
-            fq
+            weights["Freq"] * fq
 
             +
 
-            weights["ST"] *
-            stp
+            weights["ST"] * stp
 
             +
 
-            weights["Pattern"] *
-            ptn
+            weights["Pattern"] * ptn
 
             +
 
-            weights["Eq"] *
-            eq
-
-        )
-
-        # ----------------------------------------------------
-        # Consensus bonus
-        # ----------------------------------------------------
-
-        consensus_bonus = (
-
-            1.0 +
-
-            0.18 *
-            mean_prob
-
-        )
-
-        # ----------------------------------------------------
-        # Variance penalty
-        # ----------------------------------------------------
-
-        variance_penalty = (
-
-            1.0 /
-
-            (
-                1.0 +
-                1.50 *
-                std_prob
-            )
-
-        )
-
-        final *= (
-            consensus_bonus *
-            variance_penalty
+            weights["Eq"] * eq
         )
 
         final += 0.001
 
         final /= final.sum()
 
+        top3 = [
+            (
+                int(i),
+                float(final[i])
+            )
+
+            for i in np.argsort(
+                final
+            )[::-1][:3]
+        ]
+
         return {
-
             "Prob": final,
-
-            "Top3": [
-                (
-                    int(i),
-                    float(final[i])
-                )
-                for i in
-                np.argsort(
-                    final
-                )[::-1][:3]
-            ],
-
-            "Weights": weights,
-
-            "EquationStrength":
-                eq_result["strength"],
-
-            "StableEquations":
-                eq_result["stable"]
-
+            "Top3": top3,
+            "Weights": weights
         }
 
+
     # ========================================================
-    # PREDICT ALL
+    # PREDICT CURRENT
     # ========================================================
 
     def predict_all(
@@ -1772,13 +1679,14 @@ class EnsembleEngine:
         )
 
         # ----------------------------------------------------
-        # Next date
+        # Next Date
         # ----------------------------------------------------
 
         if self.target_dow is not None:
 
             days = (
-                self.target_dow -
+                self.target_dow
+                -
                 last_date.dayofweek
             ) % 7
 
@@ -1792,7 +1700,8 @@ class EnsembleEngine:
                 days = max(
                     1,
                     (
-                        last_date -
+                        last_date
+                        -
                         self.df[
                             "Date"
                         ].iloc[-2]
@@ -1804,38 +1713,41 @@ class EnsembleEngine:
                 days = 7
 
         next_date = (
-            last_date +
+            last_date
+            +
             timedelta(days=days)
         )
 
         # ----------------------------------------------------
-        # Append dummy row
+        # Dummy target row
         # ----------------------------------------------------
 
-        ext = pd.concat([
+        ext = pd.concat(
+            [
+                self.df,
 
-            self.df,
+                pd.DataFrame(
+                    [
+                        {
+                            "Date":
+                                next_date,
 
-            pd.DataFrame([{
+                            "Result_3D":
+                                "000",
 
-                "Date":
-                    next_date,
-
-                "Result_3D":
-                    "000",
-
-                "Result_2D":
-                    "00"
-
-            }])
-
-        ], ignore_index=True)
+                            "Result_2D":
+                                "00"
+                        }
+                    ]
+                )
+            ],
+            ignore_index=True
+        )
 
         if status_text:
 
             status_text.markdown(
-                "🧠 **Step 2/4:** "
-                "สกัดฟีเจอร์..."
+                "🧠 **กำลังสร้าง Features...**"
             )
 
         ext = build_features(
@@ -1844,44 +1756,43 @@ class EnsembleEngine:
             self.rolls
         )
 
-        if progress_bar:
-            progress_bar.progress(25)
+        hist = ext.iloc[
+            :-1
+        ].copy()
 
-        hist = (
-            ext.iloc[:-1]
-            .copy()
+        X = hist[
+            self.features
+        ].astype(
+            np.float32
         )
 
-        X = (
-            hist[
-                self.features
-            ]
-            .astype(np.float32)
+        X_next = ext.iloc[
+            [-1]
+        ][
+            self.features
+        ].astype(
+            np.float32
         )
-
-        X_next = (
-            ext.iloc[[-1]][
-                self.features
-            ]
-            .astype(np.float32)
-        )
-
-        if status_text:
-
-            status_text.markdown(
-                "⚙️ **Step 3/4:** "
-                "วิเคราะห์ Ensemble..."
-            )
 
         predictions = {}
 
-        for pos in [
+        positions = [
             "H",
             "T",
             "O",
             "T2",
             "O2"
-        ]:
+        ]
+
+        for i, pos in enumerate(
+            positions
+        ):
+
+            if status_text:
+
+                status_text.markdown(
+                    f"⚙️ **วิเคราะห์ {i+1}/5:** {pos}"
+                )
 
             predictions[pos] = (
                 self.process_position(
@@ -1892,8 +1803,17 @@ class EnsembleEngine:
                 )
             )
 
-        if progress_bar:
-            progress_bar.progress(70)
+            if progress_bar:
+
+                progress_bar.progress(
+                    20 +
+                    int(
+                        (
+                            (i + 1)
+                            / 5
+                        ) * 30
+                    )
+                )
 
         return (
             predictions,
@@ -1901,88 +1821,363 @@ class EnsembleEngine:
         )
 
 
-# ============================================================
-# 11. COMBINE TOP
-# ============================================================
+    # ========================================================
+    # HISTORY 10 DRAW
+    # ========================================================
 
-def combine_positions(
-    preds,
-    positions,
-    n=5
-):
+    def evaluate_history(
+        self,
+        progress_bar=None,
+        status_text=None
+    ):
 
-    score = sum(
-        preds[pos]["Prob"]
-        for pos in positions
-    ) / len(positions)
-
-    return [
-
-        (
-            int(i),
-            float(score[i])
+        n_total = len(
+            self.df
         )
 
-        for i in
-        np.argsort(
-            score
-        )[::-1][:n]
-
-    ]
-
-
-# ============================================================
-# 12. HTML HELPERS
-# ============================================================
-
-def render_top3(items):
-
-    return (
-        '<span class="dot-sep">•</span>'
-        .join(
-            f'<span class="top3-number">{n}</span>'
-            for n, p in items
+        num_records = min(
+            10,
+            n_total - 45
         )
+
+        if num_records <= 0:
+            return []
+
+        start_idx = (
+            n_total
+            -
+            num_records
+        )
+
+        records = []
+
+        # ----------------------------------------------------
+        # Feature data
+        # ----------------------------------------------------
+
+        ext = build_features(
+            self.df,
+            self.lags,
+            self.rolls
+        )
+
+        positions = [
+            "H",
+            "T",
+            "O",
+            "T2",
+            "O2"
+        ]
+
+        labels = {
+            "H":
+                "ร้อยบน",
+
+            "T":
+                "สิบบน",
+
+            "O":
+                "หน่วยบน",
+
+            "T2":
+                "สิบล่าง",
+
+            "O2":
+                "หน่วยล่าง"
+        }
+
+        for step, i in enumerate(
+            range(
+                start_idx,
+                n_total
+            )
+        ):
+
+            if status_text:
+
+                status_text.markdown(
+                    f"🕰️ **ประวัติย้อนหลัง:** "
+                    f"{step+1}/{num_records}"
+                )
+
+            if progress_bar:
+
+                progress_bar.progress(
+                    55 +
+                    int(
+                        (
+                            (step + 1)
+                            /
+                            num_records
+                        )
+                        * 40
+                    )
+                )
+
+            # ------------------------------------------------
+            # IMPORTANT:
+            # ใช้ข้อมูลก่อนงวดนั้นเท่านั้น
+            # ------------------------------------------------
+
+            hist = ext.iloc[
+                :i
+            ].copy()
+
+            X = hist[
+                self.features
+            ].astype(
+                np.float32
+            )
+
+            X_next = ext.iloc[
+                [i]
+            ][
+                self.features
+            ].astype(
+                np.float32
+            )
+
+            preds = {}
+
+            for pos in positions:
+
+                preds[pos] = (
+                    self.process_position(
+                        pos,
+                        hist,
+                        X,
+                        X_next
+                    )
+                )
+
+            # ------------------------------------------------
+            # Actual
+            # ------------------------------------------------
+
+            actual_row = (
+                self.df.iloc[i]
+            )
+
+            actual_3d = str(
+                actual_row[
+                    "Result_3D"
+                ]
+            ).zfill(3)
+
+            actual_2d = str(
+                actual_row[
+                    "Result_2D"
+                ]
+            ).zfill(2)
+
+            actual_digits = {
+                "H":
+                    int(actual_3d[0]),
+
+                "T":
+                    int(actual_3d[1]),
+
+                "O":
+                    int(actual_3d[2]),
+
+                "T2":
+                    int(actual_2d[0]),
+
+                "O2":
+                    int(actual_2d[1])
+            }
+
+            # ------------------------------------------------
+            # Position TOP-3
+            # ------------------------------------------------
+
+            position_data = {}
+
+            for pos in positions:
+
+                top3 = preds[
+                    pos
+                ]["Top3"]
+
+                nums = [
+                    n
+                    for n, p
+                    in top3
+                ]
+
+                actual = (
+                    actual_digits[pos]
+                )
+
+                position_data[pos] = {
+                    "nums": nums,
+                    "actual": actual,
+                    "hit":
+                        actual in nums
+                }
+
+            # ------------------------------------------------
+            # Overall TOP-5
+            # ------------------------------------------------
+
+            upper_score = (
+                preds["H"]["Prob"]
+                +
+                preds["T"]["Prob"]
+                +
+                preds["O"]["Prob"]
+            ) / 3
+
+            lower_score = (
+                preds["T2"]["Prob"]
+                +
+                preds["O2"]["Prob"]
+            ) / 2
+
+            upper_top5 = [
+                int(i)
+                for i in np.argsort(
+                    upper_score
+                )[::-1][:5]
+            ]
+
+            lower_top5 = [
+                int(i)
+                for i in np.argsort(
+                    lower_score
+                )[::-1][:5]
+            ]
+
+            upper_actuals = [
+                int(x)
+                for x in actual_3d
+            ]
+
+            lower_actuals = [
+                int(x)
+                for x in actual_2d
+            ]
+
+            upper_hit = any(
+                x in upper_top5
+                for x in upper_actuals
+            )
+
+            lower_hit = any(
+                x in lower_top5
+                for x in lower_actuals
+            )
+
+            records.append(
+                {
+                    "Date":
+                        actual_row[
+                            "Date"
+                        ],
+
+                    "Result_3D":
+                        actual_3d,
+
+                    "Result_2D":
+                        actual_2d,
+
+                    "Positions":
+                        position_data,
+
+                    "UpperTop5":
+                        upper_top5,
+
+                    "LowerTop5":
+                        lower_top5,
+
+                    "UpperHit":
+                        upper_hit,
+
+                    "LowerHit":
+                        lower_hit
+                }
+            )
+
+        return records[::-1]
+
+
+# ============================================================
+# 11. DISPLAY HELPERS
+# ============================================================
+
+def format_top3(items):
+
+    return " • ".join(
+        str(n)
+        for n, p in items
     )
 
 
-def render_top5(items):
+def format_top5(nums):
 
-    return (
-        '<span class="dot-sep">•</span>'
-        .join(
-            f'<span class="top5-number">{n}</span>'
-            for n, p in items
-        )
+    return " • ".join(
+        str(n)
+        for n in nums
     )
 
 
-def render_probability(items):
+def top3_html(items):
+
+    return " ".join(
+        f"""
+        <span class="top-number">
+            {n}
+        </span>
+        """
+        for n, p in items
+    )
+
+
+def top5_html(nums):
+
+    return " ".join(
+        f"""
+        <span class="overall-number">
+            {n}
+        </span>
+        """
+        for n in nums
+    )
+
+
+def hit_mark(hit):
+
+    if hit:
+
+        return (
+            "✅ <b>เข้า</b>"
+        )
 
     return (
-        " &nbsp;|&nbsp; ".join(
-            f"{n} ({p:.1%})"
-            for n, p in items
-        )
+        "❌ หลุด"
     )
 
 
 # ============================================================
-# 13. HEADER
+# 12. HEADER
 # ============================================================
 
 st.markdown(
-    '<div class="main-title">'
-    '🚀 LOTTO AI V.MAX'
-    '</div>',
+    """
+    <div class="main-title">
+        🚀 LOTTO AI V.MAX
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
 st.markdown(
-    '<div class="sub-title">'
-    'HYBRID SPEED-STABLE<br>'
-    'AI + Statistics + Equation + Walk-Forward'
-    '</div>',
+    """
+    <div class="sub-title">
+        HYBRID AI + STATISTICS + EQUATION<br>
+        TOP-3 EVERY POSITION • TOP-5 OVERALL • 10-DRAW HISTORY
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
@@ -1990,7 +2185,7 @@ st.divider()
 
 
 # ============================================================
-# 14. SELECT
+# 13. SELECT
 # ============================================================
 
 c1, c2 = st.columns(2)
@@ -2004,22 +2199,29 @@ selected_lotto = c1.selectbox(
 
 day_options = {
 
-    "อัตโนมัติ": None,
+    "อัตโนมัติ":
+        None,
 
-    "วันจันทร์": 0,
+    "วันจันทร์":
+        0,
 
-    "วันอังคาร": 1,
+    "วันอังคาร":
+        1,
 
-    "วันพุธ": 2,
+    "วันพุธ":
+        2,
 
-    "วันพฤหัสบดี": 3,
+    "วันพฤหัสบดี":
+        3,
 
-    "วันศุกร์": 4,
+    "วันศุกร์":
+        4,
 
-    "วันเสาร์": 5,
+    "วันเสาร์":
+        5,
 
-    "วันอาทิตย์": 6
-
+    "วันอาทิตย์":
+        6
 }
 
 day_label = c2.selectbox(
@@ -2031,7 +2233,7 @@ day_label = c2.selectbox(
 
 
 # ============================================================
-# 15. RUN
+# 14. RUN
 # ============================================================
 
 if st.button(
@@ -2040,17 +2242,18 @@ if st.button(
     use_container_width=True
 ):
 
-    progress_bar = st.progress(0)
+    progress_bar = st.progress(
+        0
+    )
 
     status_text = st.empty()
 
     # --------------------------------------------------------
-    # Step 1
+    # LOAD
     # --------------------------------------------------------
 
     status_text.markdown(
-        "⏳ **Step 1/4:** "
-        "โหลดข้อมูลล่าสุด..."
+        "⏳ **กำลังโหลดข้อมูลล่าสุด...**"
     )
 
     df = fetch_and_clean_data(
@@ -2076,29 +2279,27 @@ if st.button(
 
         st.stop()
 
-    progress_bar.progress(10)
-
-    # --------------------------------------------------------
-    # Engine
-    # --------------------------------------------------------
-
-    engine = EnsembleEngine(
-
-        df,
-
-        selected_lotto,
-
-        day_options[
-            day_label
-        ]
-
+    progress_bar.progress(
+        10
     )
 
     # --------------------------------------------------------
-    # Predict
+    # ENGINE
     # --------------------------------------------------------
 
-    preds, next_date = (
+    engine = EnsembleEngine(
+        df,
+        selected_lotto,
+        day_options[
+            day_label
+        ]
+    )
+
+    # --------------------------------------------------------
+    # CURRENT
+    # --------------------------------------------------------
+
+    predictions, next_date = (
         engine.predict_all(
             progress_bar,
             status_text
@@ -2106,21 +2307,59 @@ if st.button(
     )
 
     # --------------------------------------------------------
-    # Overall
+    # HISTORY
     # --------------------------------------------------------
 
-    status_text.markdown(
-        "✨ **Step 4/4:** "
-        "จัดอันดับเลขเด่น..."
+    history = (
+        engine.evaluate_history(
+            progress_bar,
+            status_text
+        )
     )
 
-    progress_bar.progress(95)
+    progress_bar.progress(
+        100
+    )
+
+    status_text.empty()
+    progress_bar.empty()
+
+    days = [
+        "จันทร์",
+        "อังคาร",
+        "พุธ",
+        "พฤหัสบดี",
+        "ศุกร์",
+        "เสาร์",
+        "อาทิตย์"
+    ]
 
     # ========================================================
-    # LABEL
+    # TARGET DATE
     # ========================================================
 
-    labels = {
+    st.divider()
+
+    st.info(
+        f"📅 งวดเป้าหมาย: "
+        f"วัน{days[next_date.dayofweek]} "
+        f"{next_date.strftime('%d-%m-%Y')} "
+        f"| ข้อมูล {len(df)} งวด"
+    )
+
+
+    # ========================================================
+    # TOP-3 EVERY POSITION
+    # ========================================================
+
+    st.markdown(
+        '<div class="section-title">'
+        '🎯 เลขเด่น TOP-3 ทุกหลัก'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    position_labels = {
 
         "H":
             "หลักร้อย 3 ตัวบน",
@@ -2136,41 +2375,7 @@ if st.button(
 
         "O2":
             "หลักหน่วย 2 ตัวล่าง"
-
     }
-
-    days = [
-
-        "จันทร์",
-        "อังคาร",
-        "พุธ",
-        "พฤหัสบดี",
-        "ศุกร์",
-        "เสาร์",
-        "อาทิตย์"
-
-    ]
-
-    # ========================================================
-    # INFO
-    # ========================================================
-
-    st.divider()
-
-    st.info(
-        f"📅 งวดเป้าหมาย: "
-        f"วัน{days[next_date.dayofweek]} "
-        f"{next_date.strftime('%d-%m-%Y')} "
-        f"• ข้อมูล {len(df)} งวด"
-    )
-
-    # ========================================================
-    # TOP 3 EACH POSITION
-    # ========================================================
-
-    st.subheader(
-        "🎯 เลขเด่น TOP-3 แต่ละหลัก"
-    )
 
     for pos in [
         "H",
@@ -2180,124 +2385,363 @@ if st.button(
         "O2"
     ]:
 
-        res = preds[pos]
+        res = predictions[
+            pos
+        ]
 
         st.markdown(
-            f'<div class="position-title">'
-            f'📍 {labels[pos]}'
-            f'</div>',
+            f"""
+            <div class="position-card">
+
+                <div class="position-name">
+                    {position_labels[pos]}
+                </div>
+
+                <div>
+                    {top3_html(res["Top3"])}
+                </div>
+
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
-        st.markdown(
-            f"""<div class="hot-card">
-<div style="text-align:center; margin:8px 0;">
-{render_top3(res["Top3"])}
-</div>
-<div class="confidence">
-{render_probability(res["Top3"])}
-</div>
-</div>""",
-            unsafe_allow_html=True
-        )
 
     # ========================================================
-    # TOP 5 ON
+    # OVERALL TOP-5
     # ========================================================
 
-    hot_top = combine_positions(
-        preds,
-        ["H", "T", "O"],
-        5
+    upper_score = (
+        predictions["H"]["Prob"]
+        +
+        predictions["T"]["Prob"]
+        +
+        predictions["O"]["Prob"]
+    ) / 3
+
+    lower_score = (
+        predictions["T2"]["Prob"]
+        +
+        predictions["O2"]["Prob"]
+    ) / 2
+
+    upper_top5 = [
+        int(i)
+        for i in np.argsort(
+            upper_score
+        )[::-1][:5]
+    ]
+
+    lower_top5 = [
+        int(i)
+        for i in np.argsort(
+            lower_score
+        )[::-1][:5]
+    ]
+
+
+    st.markdown(
+        '<div class="section-title">'
+        '🔥 สรุปเลขเด่นภาพรวม'
+        '</div>',
+        unsafe_allow_html=True
     )
 
-    # ========================================================
-    # TOP 5 BOTTOM
-    # ========================================================
 
-    hot_bottom = combine_positions(
-        preds,
-        ["T2", "O2"],
-        5
+    st.markdown(
+        f"""
+        <div class="overall-card">
+
+            <div style="
+                font-weight:800;
+                margin-bottom:8px;
+            ">
+                🔴 เลขเด่นบน TOP-5
+            </div>
+
+            <div>
+                {top5_html(upper_top5)}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
+
+    st.markdown(
+        f"""
+        <div class="overall-card">
+
+            <div style="
+                font-weight:800;
+                margin-bottom:8px;
+            ">
+                🔵 เลขเด่นล่าง TOP-5
+            </div>
+
+            <div>
+                {top5_html(lower_top5)}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
     # ========================================================
-    # SUMMARY
+    # HISTORY 10 DRAW
     # ========================================================
 
     st.divider()
 
-    st.subheader(
-        "🔥 สรุปเลขเด่นภาพรวม"
-    )
-
-    # --------------------------------------------------------
-    # TOP
-    # --------------------------------------------------------
-
     st.markdown(
-        f"""<div class="hot-card">
-<div style="font-size:17px; font-weight:800; margin-bottom:8px;">
-🔥 เลขเด่นบน TOP-5
-</div>
-<div style="text-align:center; margin:12px 0;">
-{render_top5(hot_top)}
-</div>
-<div class="confidence">
-{render_probability(hot_top)}
-</div>
-</div>""",
+        '<div class="section-title">'
+        '📜 ประวัติย้อนหลัง 10 งวด'
+        '</div>',
         unsafe_allow_html=True
     )
 
-    # --------------------------------------------------------
-    # BOTTOM
-    # --------------------------------------------------------
+    if not history:
 
-    st.markdown(
-        f"""<div class="hot-card">
-<div style="font-size:17px; font-weight:800; margin-bottom:8px;">
-🔥 เลขเด่นล่าง TOP-5
-</div>
-<div style="text-align:center; margin:12px 0;">
-{render_top5(hot_bottom)}
-</div>
-<div class="confidence">
-{render_probability(hot_bottom)}
-</div>
-</div>""",
-        unsafe_allow_html=True
-    )
+        st.warning(
+            "ไม่มีข้อมูลย้อนหลังเพียงพอ"
+        )
+
+    else:
+
+        for rec in history:
+
+            date_str = (
+                rec["Date"]
+                .strftime(
+                    "%d-%m-%Y"
+                )
+            )
+
+            # ------------------------------------------------
+            # Position rows
+            # ------------------------------------------------
+
+            pos_html = ""
+
+            for pos in [
+                "H",
+                "T",
+                "O",
+                "T2",
+                "O2"
+            ]:
+
+                pdata = (
+                    rec[
+                        "Positions"
+                    ][pos]
+                )
+
+                nums = " • ".join(
+                    str(x)
+                    for x in pdata[
+                        "nums"
+                    ]
+                )
+
+                actual = (
+                    pdata["actual"]
+                )
+
+                mark = hit_mark(
+                    pdata["hit"]
+                )
+
+                pos_html += f"""
+                <div class="history-line">
+                    <b>
+                        {position_labels[pos]}
+                    </b>
+                    :
+                    {nums}
+                    |
+                    จริง <span class="real">
+                        {actual}
+                    </span>
+                    {mark}
+                </div>
+                """
+
+            # ------------------------------------------------
+            # Overall
+            # ------------------------------------------------
+
+            upper_nums = (
+                format_top5(
+                    rec["UpperTop5"]
+                )
+            )
+
+            lower_nums = (
+                format_top5(
+                    rec["LowerTop5"]
+                )
+            )
+
+            upper_mark = hit_mark(
+                rec["UpperHit"]
+            )
+
+            lower_mark = hit_mark(
+                rec["LowerHit"]
+            )
+
+            st.markdown(
+                f"""
+                <div class="history-card">
+
+                    <div class="history-date">
+                        📅 {date_str}
+                    </div>
+
+                    <div class="history-line">
+                        <b>ผลจริงบน:</b>
+                        {rec["Result_3D"]}
+                    </div>
+
+                    <div class="history-line">
+                        <b>ผลจริงล่าง:</b>
+                        {rec["Result_2D"]}
+                    </div>
+
+                    <hr>
+
+                    {pos_html}
+
+                    <hr>
+
+                    <div class="history-line">
+                        🔴 <b>บน TOP-5:</b>
+                        {upper_nums}
+                        {upper_mark}
+                    </div>
+
+                    <div class="history-line">
+                        🔵 <b>ล่าง TOP-5:</b>
+                        {lower_nums}
+                        {lower_mark}
+                    </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
 
     # ========================================================
-    # SYSTEM INFO
+    # HISTORY SUMMARY
     # ========================================================
 
-    st.divider()
+    if history:
+
+        st.markdown(
+            '<div class="section-title">'
+            '📊 สรุปผลงานย้อนหลัง 10 งวด'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        pos_hits = {
+            p: sum(
+                1
+                for r in history
+                if r["Positions"][p]["hit"]
+            )
+            for p in [
+                "H",
+                "T",
+                "O",
+                "T2",
+                "O2"
+            ]
+        }
+
+        upper_hits = sum(
+            r["UpperHit"]
+            for r in history
+        )
+
+        lower_hits = sum(
+            r["LowerHit"]
+            for r in history
+        )
+
+        total = len(history)
+
+        st.markdown(
+            f"""
+            <div class="history-card">
+
+                <div class="history-line">
+                    🔢 <b>ร้อยบน TOP-3:</b>
+                    {pos_hits["H"]}/{total}
+                </div>
+
+                <div class="history-line">
+                    🔢 <b>สิบบน TOP-3:</b>
+                    {pos_hits["T"]}/{total}
+                </div>
+
+                <div class="history-line">
+                    🔢 <b>หน่วยบน TOP-3:</b>
+                    {pos_hits["O"]}/{total}
+                </div>
+
+                <div class="history-line">
+                    🔢 <b>สิบล่าง TOP-3:</b>
+                    {pos_hits["T2"]}/{total}
+                </div>
+
+                <div class="history-line">
+                    🔢 <b>หน่วยล่าง TOP-3:</b>
+                    {pos_hits["O2"]}/{total}
+                </div>
+
+                <hr>
+
+                <div class="history-line">
+                    🔴 <b>บน TOP-5:</b>
+                    {upper_hits}/{total}
+                </div>
+
+                <div class="history-line">
+                    🔵 <b>ล่าง TOP-5:</b>
+                    {lower_hits}/{total}
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+    # ========================================================
+    # FOOTER
+    # ========================================================
 
     st.success(
         "✅ วิเคราะห์เสร็จสิ้น"
     )
 
     st.caption(
-        "🚀 Speed-Stable Engine: "
-        "RF + ExtraTrees + HGB + "
-        "Frequency + Transition + Pattern + "
-        "24 Core Equations + Walk-Forward + Consensus"
+        "Strict Causal • Leakage-safe • "
+        "Walk-Forward • Dynamic Ensemble"
     )
 
     st.caption(
-        "🔒 Leakage-safe • ไม่มี Calendar/Day/Month • "
-        "ไม่มี Persistent Model"
+        "ไม่มี Persistent Model และไม่มี Joblib "
+        "โมเดลคำนวณใหม่ทุกครั้งที่กดวิเคราะห์"
     )
 
     st.caption(
-        "⚠️ คะแนนเป็นคะแนนเชิงสถิติของระบบ "
-        "ไม่ใช่ความน่าจะเป็นที่รับประกันผลรางวัลจริง"
+        "⚠️ TOP-3/TOP-5 เป็นคะแนนจากโมเดลและสถิติ "
+        "ไม่ใช่การรับประกันผลรางวัลจริง"
     )
-
-    progress_bar.progress(100)
-
-    status_text.empty()
-
-    progress_bar.empty()
