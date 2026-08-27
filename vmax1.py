@@ -39,7 +39,6 @@ from bs4 import BeautifulSoup
 import re
 from datetime import datetime, timedelta
 import warnings
-import textwrap # เพิ่มตัวนี้เข้ามาเพื่อแก้ปัญหาช่องว่างใน HTML Markdown
 
 from sklearn.ensemble import (
     ExtraTreesClassifier,
@@ -50,7 +49,7 @@ from sklearn.ensemble import (
 warnings.filterwarnings("ignore")
 
 # ============================================================
-# 0. CONFIG
+# 0. HELPER FUNCTION & CONFIG
 # ============================================================
 
 st.set_page_config(
@@ -58,6 +57,14 @@ st.set_page_config(
     page_icon="❄️",
     layout="centered"
 )
+
+def render_html(html_str):
+    """
+    ฟังก์ชันลบช่องว่างด้านหน้าทุกบรรทัด 
+    ป้องกัน Streamlit เรนเดอร์เป็น Code Block
+    """
+    clean_html = "\n".join([line.strip() for line in html_str.split("\n")])
+    st.markdown(clean_html, unsafe_allow_html=True)
 
 # ============================================================
 # 1. LOTTERY SOURCES
@@ -99,10 +106,9 @@ LOTTERY_SOURCES = {
 # 2. CSS
 # ============================================================
 
-st.markdown(
-    textwrap.dedent("""
+render_html(
+    """
     <style>
-
     .main-title {
         font-size: 30px;
         font-weight: 900;
@@ -110,14 +116,12 @@ st.markdown(
         margin-bottom: 4px;
         color: #0d47a1;
     }
-
     .sub-title {
         font-size: 14px;
         text-align: center;
         color: #546e7a;
         margin-bottom: 15px;
     }
-
     .position-title {
         font-size: 18px;
         font-weight: 900;
@@ -125,7 +129,6 @@ st.markdown(
         margin-bottom: 8px;
         color: #1565c0;
     }
-
     .cold-card {
         padding: 15px;
         border-radius: 14px;
@@ -134,7 +137,6 @@ st.markdown(
         margin: 8px 0;
         box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
-
     .cold-card-strong {
         padding: 16px;
         border-radius: 14px;
@@ -142,44 +144,36 @@ st.markdown(
         background-color: #e3f2fd;
         margin: 10px 0;
     }
-
     .number-highlight {
         font-size: 27px;
         font-weight: 900;
         padding: 4px 8px;
         color: #0d47a1;
     }
-
     .dot-sep {
         color: #90caf9;
         margin: 0 4px;
     }
-
     .score {
         font-size: 14px;
         color: #546e7a;
     }
-
     .good {
         color: #2e7d32;
         font-weight: 800;
     }
-
     .warn {
         color: #ef6c00;
         font-weight: 800;
     }
-
     .bad {
         color: #c62828;
         font-weight: 800;
     }
-
     .info-row {
         padding: 5px 0;
         font-size: 14px;
     }
-
     .badge {
         display: inline-block;
         padding: 4px 8px;
@@ -187,25 +181,21 @@ st.markdown(
         font-weight: 700;
         margin-right: 4px;
     }
-
     .badge-ai {
         background-color: #fff3e0;
         border: 1px solid #ffcc80;
         color: #e65100;
     }
-
     .badge-stat {
         background-color: #e8f5e9;
         border: 1px solid #a5d6a7;
         color: #2e7d32;
     }
-
     .badge-eq {
         background-color: #f3e5f5;
         border: 1px solid #ce93d8;
         color: #6a1b9a;
     }
-
     .history-card {
         border: 1px solid #ddd;
         border-radius: 10px;
@@ -213,10 +203,8 @@ st.markdown(
         margin-bottom: 12px;
         background: #fafafa;
     }
-
     </style>
-    """),
-    unsafe_allow_html=True
+    """
 )
 
 # ============================================================
@@ -2254,20 +2242,22 @@ def overall_cold(
 # 13. UI
 # ============================================================
 
-st.markdown(
-    '<div class="main-title">'
-    '❄️ LOTTO AI V.MAX COLD/DEAD'
-    '</div>',
-    unsafe_allow_html=True
+render_html(
+    """
+    <div class="main-title">
+    ❄️ LOTTO AI V.MAX COLD/DEAD
+    </div>
+    """
 )
 
-st.markdown(
-    '<div class="sub-title">'
-    'AI + Statistics + Equation + '
-    '<b>Cold Score + Cold Stability</b><br>'
-    'ระบบจัดอันดับเลขที่มีคะแนนดับสูงสุดจากข้อมูลย้อนหลัง'
-    '</div>',
-    unsafe_allow_html=True
+render_html(
+    """
+    <div class="sub-title">
+    AI + Statistics + Equation + 
+    <b>Cold Score + Cold Stability</b><br>
+    ระบบจัดอันดับเลขที่มีคะแนนดับสูงสุดจากข้อมูลย้อนหลัง
+    </div>
+    """
 )
 
 st.divider()
@@ -2429,11 +2419,12 @@ if st.button(
 
         res = predictions[pos]
 
-        st.markdown(
-            f'<div class="position-title">'
-            f'📍 {labels[pos]}'
-            f'</div>',
-            unsafe_allow_html=True
+        render_html(
+            f"""
+            <div class="position-title">
+            📍 {labels[pos]}
+            </div>
+            """
         )
 
         cold = res["Cold"]
@@ -2442,81 +2433,45 @@ if st.button(
             res["Stability"]
         )
 
-        st.markdown(
-            textwrap.dedent(f"""
+        render_html(
+            f"""
             <div class="cold-card-strong">
-
-                <div style="
-                    font-weight:900;
-                    margin-bottom:8px;
-                    color:#0d47a1;
-                ">
-                    ❄️ FINAL COLD-5
-                </div>
-
-                <div style="
-                    text-align:center;
-                    margin:10px 0;
-                ">
-                    {html_cold(cold)}
-                </div>
-
-                <div style="
-                    text-align:center;
-                    color:#546e7a;
-                    font-size:13px;
-                ">
-                    Cold Score:
-                    {html_score(cold)}
-                </div>
-
+            <div style="font-weight:900; margin-bottom:8px; color:#0d47a1;">
+            ❄️ FINAL COLD-5
             </div>
-
+            <div style="text-align:center; margin:10px 0;">
+            {html_cold(cold)}
+            </div>
+            <div style="text-align:center; color:#546e7a; font-size:13px;">
+            Cold Score: {html_score(cold)}
+            </div>
+            </div>
             <div class="info-row">
-                🤖 <b>AI COLD-3:</b>
-                <span class="badge badge-ai">
-                    {html_numbers(res["AI_Cold"])}
-                </span>
+            🤖 <b>AI COLD-3:</b>
+            <span class="badge badge-ai">
+            {html_numbers(res["AI_Cold"])}
+            </span>
             </div>
-
             <div class="info-row">
-                📊 <b>STAT COLD-3:</b>
-                <span class="badge badge-stat">
-                    {html_numbers(res["Stat_Cold"])}
-                </span>
+            📊 <b>STAT COLD-3:</b>
+            <span class="badge badge-stat">
+            {html_numbers(res["Stat_Cold"])}
+            </span>
             </div>
-
             <div class="info-row">
-                🧮 <b>EQUATION COLD-5:</b>
-                <span class="badge badge-eq">
-                    {html_numbers(res["Equation_Cold"])}
-                </span>
+            🧮 <b>EQUATION COLD-5:</b>
+            <span class="badge badge-eq">
+            {html_numbers(res["Equation_Cold"])}
+            </span>
             </div>
-
             <div class="info-row">
-                🧊 <b>STABILITY COLD-5:</b>
-                {html_numbers(stability)}
+            🧊 <b>STABILITY COLD-5:</b>
+            {html_numbers(stability)}
             </div>
-
-            <div style="
-                font-size:13px;
-                color:#777;
-                margin-top:8px;
-            ">
-
-                🧮 Equation:
-                <b>{res["StableEquations"]}</b>
-                /
-                {res["TotalEquations"]}
-
-                &nbsp; | &nbsp;
-
-                Strength:
-                <b>{res["EquationStrength"]:.0%}</b>
-
+            <div style="font-size:13px; color:#777; margin-top:8px;">
+            🧮 Equation: <b>{res["StableEquations"]}</b> / {res["TotalEquations"]} &nbsp; | &nbsp; Strength: <b>{res["EquationStrength"]:.0%}</b>
             </div>
-            """),
-            unsafe_allow_html=True
+            """
         )
 
     # ========================================================
@@ -2539,61 +2494,31 @@ if st.button(
         5
     )
 
-    st.markdown(
-        textwrap.dedent(f"""
+    render_html(
+        f"""
         <div class="cold-card">
-
-            <div style="
-                font-weight:900;
-                color:#1565c0;
-            ">
-                ❄️ COLD-5 TOP บน
-            </div>
-
-            <div style="
-                text-align:center;
-                margin:10px 0;
-            ">
-                {html_cold(upper)}
-            </div>
-
-            <div style="
-                text-align:center;
-                color:#546e7a;
-                font-size:13px;
-            ">
-                {html_score(upper)}
-            </div>
-
+        <div style="font-weight:900; color:#1565c0;">
+        ❄️ COLD-5 TOP บน
         </div>
-
+        <div style="text-align:center; margin:10px 0;">
+        {html_cold(upper)}
+        </div>
+        <div style="text-align:center; color:#546e7a; font-size:13px;">
+        {html_score(upper)}
+        </div>
+        </div>
         <div class="cold-card">
-
-            <div style="
-                font-weight:900;
-                color:#1565c0;
-            ">
-                ❄️ COLD-5 TOP ล่าง
-            </div>
-
-            <div style="
-                text-align:center;
-                margin:10px 0;
-            ">
-                {html_cold(lower)}
-            </div>
-
-            <div style="
-                text-align:center;
-                color:#546e7a;
-                font-size:13px;
-            ">
-                {html_score(lower)}
-            </div>
-
+        <div style="font-weight:900; color:#1565c0;">
+        ❄️ COLD-5 TOP ล่าง
         </div>
-        """),
-        unsafe_allow_html=True
+        <div style="text-align:center; margin:10px 0;">
+        {html_cold(lower)}
+        </div>
+        <div style="text-align:center; color:#546e7a; font-size:13px;">
+        {html_score(lower)}
+        </div>
+        </div>
+        """
     )
 
     # ========================================================
@@ -2636,90 +2561,30 @@ if st.button(
 
         for rec in past_records:
 
-            st.markdown(
-                textwrap.dedent(f"""
+            render_html(
+                f"""
                 <div class="history-card">
-
-                    <div style="
-                        font-weight:900;
-                        color:#1565c0;
-                        margin-bottom:10px;
-                    ">
-                        📅 {rec["Date"].strftime("%d-%m-%Y")}
-                        &nbsp;|&nbsp;
-                        ผล:
-                        <span style="color:#d32f2f;">
-                            {rec["Result_3D"]}
-                            -
-                            {rec["Result_2D"]}
-                        </span>
-                    </div>
-
-                    <div class="info-row">
-                        <b>หลักร้อยบน:</b>
-                        {" • ".join(
-                            map(str, rec["H_Cold"])
-                        )}
-                        →
-                        {mark(
-                            rec["H_Success"],
-                            rec["H_Actual"]
-                        )}
-                    </div>
-
-                    <div class="info-row">
-                        <b>หลักสิบบน:</b>
-                        {" • ".join(
-                            map(str, rec["T_Cold"])
-                        )}
-                        →
-                        {mark(
-                            rec["T_Success"],
-                            rec["T_Actual"]
-                        )}
-                    </div>
-
-                    <div class="info-row">
-                        <b>หลักหน่วยบน:</b>
-                        {" • ".join(
-                            map(str, rec["O_Cold"])
-                        )}
-                        →
-                        {mark(
-                            rec["O_Success"],
-                            rec["O_Actual"]
-                        )}
-                    </div>
-
-                    <hr>
-
-                    <div class="info-row">
-                        <b>หลักสิบล่าง:</b>
-                        {" • ".join(
-                            map(str, rec["T2_Cold"])
-                        )}
-                        →
-                        {mark(
-                            rec["T2_Success"],
-                            rec["T2_Actual"]
-                        )}
-                    </div>
-
-                    <div class="info-row">
-                        <b>หลักหน่วยล่าง:</b>
-                        {" • ".join(
-                            map(str, rec["O2_Cold"])
-                        )}
-                        →
-                        {mark(
-                            rec["O2_Success"],
-                            rec["O2_Actual"]
-                        )}
-                    </div>
-
+                <div style="font-weight:900; color:#1565c0; margin-bottom:10px;">
+                📅 {rec["Date"].strftime("%d-%m-%Y")} &nbsp;|&nbsp; ผล: <span style="color:#d32f2f;">{rec["Result_3D"]}-{rec["Result_2D"]}</span>
                 </div>
-                """),
-                unsafe_allow_html=True
+                <div class="info-row">
+                <b>หลักร้อยบน:</b> {" • ".join(map(str, rec["H_Cold"]))} → {mark(rec["H_Success"], rec["H_Actual"])}
+                </div>
+                <div class="info-row">
+                <b>หลักสิบบน:</b> {" • ".join(map(str, rec["T_Cold"]))} → {mark(rec["T_Success"], rec["T_Actual"])}
+                </div>
+                <div class="info-row">
+                <b>หลักหน่วยบน:</b> {" • ".join(map(str, rec["O_Cold"]))} → {mark(rec["O_Success"], rec["O_Actual"])}
+                </div>
+                <hr>
+                <div class="info-row">
+                <b>หลักสิบล่าง:</b> {" • ".join(map(str, rec["T2_Cold"]))} → {mark(rec["T2_Success"], rec["T2_Actual"])}
+                </div>
+                <div class="info-row">
+                <b>หลักหน่วยล่าง:</b> {" • ".join(map(str, rec["O2_Cold"]))} → {mark(rec["O2_Success"], rec["O2_Actual"])}
+                </div>
+                </div>
+                """
             )
 
     # ========================================================
