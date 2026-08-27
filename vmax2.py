@@ -2190,22 +2190,14 @@ if st.button(
         )
 
         st.markdown(
-            f"""
-            <div class="hot-card">
-
-                <div style="
-                    text-align:center;
-                    margin:8px 0;
-                ">
-                    {render_top3(res["Top3"])}
-                </div>
-
-                <div class="confidence">
-                    {render_probability(res["Top3"])}
-                </div>
-
-            </div>
-            """,
+            f"""<div class="hot-card">
+<div style="text-align:center; margin:8px 0;">
+{render_top3(res["Top3"])}
+</div>
+<div class="confidence">
+{render_probability(res["Top3"])}
+</div>
+</div>""",
             unsafe_allow_html=True
         )
 
@@ -2244,30 +2236,17 @@ if st.button(
     # --------------------------------------------------------
 
     st.markdown(
-        f"""
-        <div class="hot-card">
-
-            <div style="
-                font-size:17px;
-                font-weight:800;
-                margin-bottom:8px;
-            ">
-                🔥 เลขเด่นบน TOP-5
-            </div>
-
-            <div style="
-                text-align:center;
-                margin:12px 0;
-            ">
-                {render_top5(hot_top)}
-            </div>
-
-            <div class="confidence">
-                {render_probability(hot_top)}
-            </div>
-
-        </div>
-        """,
+        f"""<div class="hot-card">
+<div style="font-size:17px; font-weight:800; margin-bottom:8px;">
+🔥 เลขเด่นบน TOP-5
+</div>
+<div style="text-align:center; margin:12px 0;">
+{render_top5(hot_top)}
+</div>
+<div class="confidence">
+{render_probability(hot_top)}
+</div>
+</div>""",
         unsafe_allow_html=True
     )
 
@@ -2276,30 +2255,17 @@ if st.button(
     # --------------------------------------------------------
 
     st.markdown(
-        f"""
-        <div class="hot-card">
-
-            <div style="
-                font-size:17px;
-                font-weight:800;
-                margin-bottom:8px;
-            ">
-                🔥 เลขเด่นล่าง TOP-5
-            </div>
-
-            <div style="
-                text-align:center;
-                margin:12px 0;
-            ">
-                {render_top5(hot_bottom)}
-            </div>
-
-            <div class="confidence">
-                {render_probability(hot_bottom)}
-            </div>
-
-        </div>
-        """,
+        f"""<div class="hot-card">
+<div style="font-size:17px; font-weight:800; margin-bottom:8px;">
+🔥 เลขเด่นล่าง TOP-5
+</div>
+<div style="text-align:center; margin:12px 0;">
+{render_top5(hot_bottom)}
+</div>
+<div class="confidence">
+{render_probability(hot_bottom)}
+</div>
+</div>""",
         unsafe_allow_html=True
     )
 
