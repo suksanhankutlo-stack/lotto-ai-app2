@@ -39,6 +39,7 @@ from bs4 import BeautifulSoup
 import re
 from datetime import datetime, timedelta
 import warnings
+import textwrap # เพิ่มตัวนี้เข้ามาเพื่อแก้ปัญหาช่องว่างใน HTML Markdown
 
 from sklearn.ensemble import (
     ExtraTreesClassifier,
@@ -99,7 +100,7 @@ LOTTERY_SOURCES = {
 # ============================================================
 
 st.markdown(
-    """
+    textwrap.dedent("""
     <style>
 
     .main-title {
@@ -214,7 +215,7 @@ st.markdown(
     }
 
     </style>
-    """,
+    """),
     unsafe_allow_html=True
 )
 
@@ -2442,7 +2443,7 @@ if st.button(
         )
 
         st.markdown(
-            f"""
+            textwrap.dedent(f"""
             <div class="cold-card-strong">
 
                 <div style="
@@ -2514,7 +2515,7 @@ if st.button(
                 <b>{res["EquationStrength"]:.0%}</b>
 
             </div>
-            """,
+            """),
             unsafe_allow_html=True
         )
 
@@ -2539,7 +2540,7 @@ if st.button(
     )
 
     st.markdown(
-        f"""
+        textwrap.dedent(f"""
         <div class="cold-card">
 
             <div style="
@@ -2591,7 +2592,7 @@ if st.button(
             </div>
 
         </div>
-        """,
+        """),
         unsafe_allow_html=True
     )
 
@@ -2636,7 +2637,7 @@ if st.button(
         for rec in past_records:
 
             st.markdown(
-                f"""
+                textwrap.dedent(f"""
                 <div class="history-card">
 
                     <div style="
@@ -2717,7 +2718,7 @@ if st.button(
                     </div>
 
                 </div>
-                """,
+                """),
                 unsafe_allow_html=True
             )
 
@@ -2734,4 +2735,4 @@ if st.button(
         "⚠️ Cold Score เป็นคะแนนจากโมเดลและสถิติย้อนหลัง "
         "ไม่ได้หมายความว่าเลขนั้นจะไม่ออกจริง "
         "และผล Backtest ไม่ใช่การรับประกันผลในอนาคต"
-        )
+    )
