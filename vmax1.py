@@ -1,5 +1,5 @@
 # ============================================================
-# ❄️ LOTTO AI V.MAX COLD/DEAD ENSEMBLE (DYNAMIC ADAPTIVE)
+# ❄️ LOTTO AI V.MAX COLD/DEAD ENSEMBLE (DYNAMIC ADAPTIVE & FAST)
 # ============================================================
 # PURPOSE:
 #   วิเคราะห์ "เลขดับ" พร้อมระบบเรียนรู้และปรับตัว (Adaptive)
@@ -8,6 +8,7 @@
 #   1. Recent Failure Penalty (แบนสมการที่เพิ่งพลาด)
 #   2. Dynamic Stat Weighting (ปรับน้ำหนัก Freq/Trans/Pattern ตามผลงานล่าสุด)
 #   3. Clear Cache Button (ปุ่มบังคับดึงข้อมูลใหม่จากเว็บ)
+#   4. Ultra-Fast Backtest (รีดความเร็วการเทสย้อนหลัง 10 งวด)
 # ============================================================
 
 import streamlit as st
@@ -266,7 +267,7 @@ class PatternEngine:
 
 
 # ============================================================
-# 8. EQUATION ENGINE (UPDATE: RECENT FAILURE PENALTY)
+# 8. EQUATION ENGINE (RECENT FAILURE PENALTY)
 # ============================================================
 
 class ColdEquationEngine:
@@ -299,14 +300,11 @@ class ColdEquationEngine:
         candidates = []
         start, recent_start = max(35, n-bt), max(0, n-5)
 
-        # Helper: Evaluate logic
         def evaluate_dict(hist_dict, next_dict, hit_thresh, recent_thresh, eq_type):
             for name, arr in hist_dict.items():
                 pred = np.floor(np.nan_to_num(arr, nan=-999)).astype(int) % 10
                 hit = np.mean(pred[start:n] == actual[start:n])
                 recent = np.mean(pred[recent_start:n] == actual[recent_start:n])
-                
-                # [ADAPTIVE] แบนสมการที่ไม่มีผลงานเลยใน 3 งวดล่าสุด (กันดับหลุดซ้ำซาก)
                 is_stale = (np.sum(pred[n-3:n] == actual[n-3:n]) == 0) if n >= 3 else False
 
                 if hit >= hit_thresh and recent >= recent_thresh and not is_stale:
@@ -345,7 +343,7 @@ class ColdEquationEngine:
 
 
 # ============================================================
-# 9. AI ENGINE
+# 9. AI ENGINE (⚡ SPEED OPTIMIZED)
 # ============================================================
 
 class ColdAI:
@@ -353,19 +351,27 @@ class ColdAI:
         self.trees = trees
         self.weights = weights
 
-    def predict(self, X, y, X_next, fast_mode=False):
+    def predict(self, X, y, X_next, fast_mode=False, is_eval=False):
         rf_w, et_w, hgb_w = self.weights
         result, total_w = np.zeros(10), 0
-        trees = max(15, self.trees // 2) if fast_mode else self.trees
-        iterations = 40 if fast_mode else 90
+        
+        # ⚡ ปรับแต่งความเร็วขั้นสุดสำหรับการเทสย้อนหลัง (Ultra-Fast Backtest)
+        if is_eval:
+            trees = 10
+            iterations = 15
+            workers = 1 # ปิด Multi-thread เพื่อลด Overhead การสลับ CPU สำหรับโมเดลจิ๋ว
+        else:
+            trees = max(15, self.trees // 2) if fast_mode else self.trees
+            iterations = 40 if fast_mode else 90
+            workers = -1 # รันเต็มสปีดในโหมดวิเคราะห์จริง
 
         if rf_w > 0:
-            model = RandomForestClassifier(n_estimators=trees, max_depth=6, min_samples_leaf=5, n_jobs=-1, random_state=42)
+            model = RandomForestClassifier(n_estimators=trees, max_depth=6, min_samples_leaf=5, n_jobs=workers, random_state=42)
             model.fit(X, y)
             for c, p in zip(model.classes_, model.predict_proba(X_next)[0]): result[int(c)] += p * rf_w
             total_w += rf_w
         if et_w > 0:
-            model = ExtraTreesClassifier(n_estimators=trees, max_depth=6, min_samples_leaf=5, n_jobs=-1, random_state=43)
+            model = ExtraTreesClassifier(n_estimators=trees, max_depth=6, min_samples_leaf=5, n_jobs=workers, random_state=43)
             model.fit(X, y)
             for c, p in zip(model.classes_, model.predict_proba(X_next)[0]): result[int(c)] += p * et_w
             total_w += et_w
@@ -381,7 +387,7 @@ class ColdAI:
 
 
 # ============================================================
-# 10. COLD SCORE ENGINE (UPDATE: DYNAMIC STAT WEIGHTING)
+# 10. COLD SCORE ENGINE (DYNAMIC STAT WEIGHTING)
 # ============================================================
 
 class ColdScoreEngine:
@@ -463,7 +469,6 @@ class ColdEnsemble:
         gaps += 1e-6
         return gaps / gaps.sum()
 
-    # --- [ADAPTIVE] คำนวณความแม่นยำเพื่อปรับน้ำหนัก ---
     def calc_dynamic_stat_weights(self, hist, pos, lookback=3):
         n = len(hist)
         base_f, base_t, base_p = 0.18, 0.14, 0.12
@@ -471,9 +476,8 @@ class ColdEnsemble:
             return base_f, base_t, base_p
 
         scores = {"f": 0, "t": 0, "p": 0}
-
         for i in range(n - lookback, n):
-            sub_hist = hist.iloc[:i]
+            sub_hist = hist.iloc[:i] # ⚡ ใช้ Slicing ลด Copy
             actual = int(hist[pos].iloc[i])
 
             fq = self.freq.analyze(sub_hist, pos)
@@ -506,7 +510,7 @@ class ColdEnsemble:
         start = max(45, n - bt_points)
         history, hits = [], []
         for idx in range(start, n):
-            hist = ext.iloc[:idx].copy()
+            hist = ext.iloc[:idx] # ⚡ ตัด .copy() ทิ้ง ช่วยประหยัด RAM & เร็วขึ้นมหาศาล
             actual = int(ext[pos].iloc[idx])
             fq = self.freq.analyze(hist, pos)
             tr = self.transition.analyze(hist, pos)
@@ -524,8 +528,9 @@ class ColdEnsemble:
 
         return {"cold_stability": self.cold_engine.stability_score(history), "top5_rate": float(np.mean(hits)) if hits else 0.0}
 
-    def process_position(self, pos, hist, X, X_next, cold_stability):
-        ai = self.ai.predict(X, hist[pos], X_next, fast_mode=True)
+    def process_position(self, pos, hist, X, X_next, cold_stability, is_eval=False):
+        # ⚡ ส่ง parameter is_eval ไปเพื่อปรับความเร็ว AI ให้เหมาะสม
+        ai = self.ai.predict(X, hist[pos], X_next, fast_mode=True, is_eval=is_eval)
         fq = self.freq.analyze(hist, pos)
         tr = self.transition.analyze(hist, pos)
         pt = self.pattern.analyze(hist, pos)
@@ -533,7 +538,6 @@ class ColdEnsemble:
         eq = eq_res["prob"]
         skip = self.build_skip_score(hist, pos)
 
-        # [ADAPTIVE] ดึงน้ำหนักสถิติที่ปรับปรุงตามผลงานล่าสุด
         w_freq, w_trans, w_pattern = self.calc_dynamic_stat_weights(hist, pos)
 
         final = self.cold_engine.final_score(
@@ -593,10 +597,13 @@ class ColdEnsemble:
 
         records = []
         for step, i in enumerate(range(n - count, n)):
-            status.markdown(f"🕰️ **Step 4/4:** ตรวจสอบย้อนหลัง {step+1}/{count}")
+            status.markdown(f"🕰️ **Step 4/4:** ตรวจสอบย้อนหลัง {step+1}/{count} (โหมดประมวลผลด่วน ⚡)")
             progress.progress(70 + int(((step + 1) / count) * 30))
 
-            hist, X, X_next = ext.iloc[:i].copy(), ext.iloc[:i][self.features].astype(np.float32), ext.iloc[[i]][self.features].astype(np.float32)
+            hist = ext.iloc[:i] # ⚡ ตัด .copy() ทิ้งช่วยให้เร็วขึ้น
+            X = hist[self.features].astype(np.float32)
+            X_next = ext.iloc[[i]][self.features].astype(np.float32)
+            
             row = {
                 "Date": self.df.iloc[i]["Date"],
                 "Result_3D": str(self.df.iloc[i]["Result_3D"]).zfill(3),
@@ -604,8 +611,11 @@ class ColdEnsemble:
             }
 
             for pos in ["H", "T", "O", "T2", "O2"]:
-                bt = self.backtest_cold(pos, ext.iloc[:i], bt_points=12)
-                pred = self.process_position(pos, hist, X, X_next, bt["cold_stability"])
+                bt = self.backtest_cold(pos, ext.iloc[:i], bt_points=8) # ⚡ ลดจุดเช็ค Stability จาก 12 เหลือ 8 ประหยัดเวลา
+                
+                # ⚡ เปิดโหมด is_eval=True เพื่อสั่งให้ AI รันแบบ Ultra-Fast
+                pred = self.process_position(pos, hist, X, X_next, bt["cold_stability"], is_eval=True)
+                
                 cold_numbers = [int(x[0]) for x in pred["Cold"]]
                 actual = int(row["Result_3D"][["H", "T", "O"].index(pos)]) if pos in ["H", "T", "O"] else int(row["Result_2D"][["T2", "O2"].index(pos)])
                 
@@ -652,12 +662,12 @@ selected_lotto = c1.selectbox("🎯 เลือกหวย", list(LOTTERY_SOUR
 day_options = {"อัตโนมัติ": None, "วันจันทร์": 0, "วันอังคาร": 1, "วันพุธ": 2, "วันพฤหัสบดี": 3, "วันศุกร์": 4, "วันเสาร์": 5, "วันอาทิตย์": 6}
 day_label = c2.selectbox("📅 วันออกรางวัล", list(day_options.keys()))
 
-st.write("") # เว้นบรรทัด
+st.write("") 
 if st.button("🔄 อัปเดตข้อมูลใหม่จากเว็บ (ล้าง Cache)", use_container_width=True):
     st.cache_data.clear()
     st.success("✅ ล้างความจำเรียบร้อย! โปรแกรมพร้อมดึงข้อมูลงวดล่าสุดจากเว็บของคุณแล้วครับ")
 
-st.write("") # เว้นบรรทัด
+st.write("") 
 
 if st.button("❄️ เริ่มวิเคราะห์ COLD/DEAD V.MAX", type="primary", use_container_width=True):
     progress, status = st.progress(0), st.empty()
