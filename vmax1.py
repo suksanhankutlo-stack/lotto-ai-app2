@@ -7,6 +7,7 @@
 # NEW FEATURES:
 #   1. Recent Failure Penalty (แบนสมการที่เพิ่งพลาด)
 #   2. Dynamic Stat Weighting (ปรับน้ำหนัก Freq/Trans/Pattern ตามผลงานล่าสุด)
+#   3. Clear Cache Button (ปุ่มบังคับดึงข้อมูลใหม่จากเว็บ)
 # ============================================================
 
 import streamlit as st
@@ -483,7 +484,6 @@ class ColdEnsemble:
             tr_c = self.cold_engine.normalize_inverse(tr)
             pt_c = self.cold_engine.normalize_inverse(pt)
 
-            # ถ้าทายถูก (ผลจริงไม่อยู่ใน top 5 ดับ) ได้คะแนนเพิ่ม
             if actual not in np.argsort(fq_c)[-5:]: scores["f"] += 1
             if actual not in np.argsort(tr_c)[-5:]: scores["t"] += 1
             if actual not in np.argsort(pt_c)[-5:]: scores["p"] += 1
@@ -492,7 +492,6 @@ class ColdEnsemble:
         if total == 0: return base_f, base_t, base_p
 
         total_weight = base_f + base_t + base_p
-        # Blend: น้ำหนักอิงตามผลงานจริง 60% + ถ่วงน้ำหนักตั้งต้น 40% (เพื่อความเสถียร)
         wf = ((scores["f"] / total) * total_weight * 0.60) + (base_f * 0.40)
         wt = ((scores["t"] / total) * total_weight * 0.60) + (base_t * 0.40)
         wp = ((scores["p"] / total) * total_weight * 0.60) + (base_p * 0.40)
@@ -540,7 +539,7 @@ class ColdEnsemble:
         final = self.cold_engine.final_score(
             ai=ai, freq=fq, trans=tr, pattern=pt, equation=eq,
             skip_score=skip, stability=cold_stability,
-            w_freq=w_freq, w_trans=w_trans, w_pattern=w_pattern # ส่งน้ำหนักแบบ Dynamic เข้าไป
+            w_freq=w_freq, w_trans=w_trans, w_pattern=w_pattern
         )
 
         cold = [(int(i), float(final[i])) for i in np.argsort(final)[-5:][::-1]]
@@ -652,6 +651,13 @@ c1, c2 = st.columns(2)
 selected_lotto = c1.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()))
 day_options = {"อัตโนมัติ": None, "วันจันทร์": 0, "วันอังคาร": 1, "วันพุธ": 2, "วันพฤหัสบดี": 3, "วันศุกร์": 4, "วันเสาร์": 5, "วันอาทิตย์": 6}
 day_label = c2.selectbox("📅 วันออกรางวัล", list(day_options.keys()))
+
+st.write("") # เว้นบรรทัด
+if st.button("🔄 อัปเดตข้อมูลใหม่จากเว็บ (ล้าง Cache)", use_container_width=True):
+    st.cache_data.clear()
+    st.success("✅ ล้างความจำเรียบร้อย! โปรแกรมพร้อมดึงข้อมูลงวดล่าสุดจากเว็บของคุณแล้วครับ")
+
+st.write("") # เว้นบรรทัด
 
 if st.button("❄️ เริ่มวิเคราะห์ COLD/DEAD V.MAX", type="primary", use_container_width=True):
     progress, status = st.progress(0), st.empty()
