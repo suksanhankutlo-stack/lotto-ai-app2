@@ -1,5 +1,5 @@
 # ============================================================
-# 🚀 LOTTO AI V.MAX HYBRID (SPEED OPTIMIZED)
+# 🚀 LOTTO AI V.MAX HYBRID (SPEED OPTIMIZED + SELF-CORRECTING)
 # TOP-3 EVERY POSITION + TOP-5 OVERALL + 10-DRAW HISTORY
 # ============================================================
 
@@ -348,7 +348,7 @@ class FastAI:
 
 
 # ============================================================
-# 10. ENSEMBLE
+# 10. ENSEMBLE (SELF-CORRECTING)
 # ============================================================
 
 class EnsembleEngine:
@@ -385,10 +385,12 @@ class EnsembleEngine:
         n = len(X)
         if n < 45: return self.base_weights.copy()
         start = max(35, n - self.bt)
-        scores = {"AI": 0, "Freq": 0, "ST": 0, "Pattern": 0, "Eq": 0}
+        scores = {"AI": 0.0, "Freq": 0.0, "ST": 0.0, "Pattern": 0.0, "Eq": 0.0}
         total_decay = 0
+        
+        # ตัวนับสถิติหลุดติดกัน (Strike Tracker)
+        strikes = {"AI": 0, "Freq": 0, "ST": 0, "Pattern": 0, "Eq": 0}
 
-        # --- OPTIMIZATION: Train Proxy ONCE instead of loop ---
         proxy_preds = None
         try:
             proxy = ExtraTreesClassifier(n_estimators=10, max_depth=5, min_samples_leaf=3, max_features="sqrt", n_jobs=-1, random_state=42)
@@ -403,37 +405,73 @@ class EnsembleEngine:
             actual = int(df_hist[pos].iloc[idx])
             hist = df_hist.iloc[:idx]
 
-            # AI Proxy Eval
+            # 1. AI Proxy Eval
             if proxy_preds is not None:
                 tmp = np.zeros(10)
                 for c, p in zip(proxy_classes, proxy_preds[step]): tmp[int(c)] = p
-                if actual in np.argsort(tmp)[::-1][:5]: scores["AI"] += decay
+                if actual in np.argsort(tmp)[::-1][:5]: 
+                    scores["AI"] += decay
+                    strikes["AI"] = 0
+                else: 
+                    scores["AI"] *= 0.85 # Penalty: หักคะแนน
+                    strikes["AI"] += 1
 
-            # Stats Eval
-            if actual in np.argsort(self.freq.analyze(hist, pos))[::-1][:5]: scores["Freq"] += decay
-            if actual in np.argsort(self.transition.analyze(hist, pos))[::-1][:5]: scores["ST"] += decay
-            if actual in np.argsort(self.pattern.analyze(hist, pos))[::-1][:5]: scores["Pattern"] += decay
+            # 2. Stats Eval (Freq)
+            if actual in np.argsort(self.freq.analyze(hist, pos))[::-1][:5]: 
+                scores["Freq"] += decay
+                strikes["Freq"] = 0
+            else: 
+                scores["Freq"] *= 0.85
+                strikes["Freq"] += 1
+
+            # 3. Transition (ST)
+            if actual in np.argsort(self.transition.analyze(hist, pos))[::-1][:5]: 
+                scores["ST"] += decay
+                strikes["ST"] = 0
+            else: 
+                scores["ST"] *= 0.85
+                strikes["ST"] += 1
+
+            # 4. Pattern
+            if actual in np.argsort(self.pattern.analyze(hist, pos))[::-1][:5]: 
+                scores["Pattern"] += decay
+                strikes["Pattern"] = 0
+            else: 
+                scores["Pattern"] *= 0.85
+                strikes["Pattern"] += 1
             
-            # Equation Eval
+            # 5. Equation Eval
             eq_result = self.equation.discover(hist, pos, bt=min(8, max(5, idx - 35)))
-            if actual in np.argsort(eq_result["prob"])[::-1][:5]: scores["Eq"] += decay
+            if actual in np.argsort(eq_result["prob"])[::-1][:5]: 
+                scores["Eq"] += decay
+                strikes["Eq"] = 0
+            else: 
+                scores["Eq"] *= 0.85
+                strikes["Eq"] += 1
 
         if total_decay <= 0: return self.base_weights.copy()
+
+        # 🚀 SELF-CORRECTION: หากเครื่องมือไหนหลุดติดกัน >= 3 งวด ให้หั่นคะแนนทิ้งครึ่งนึงทันที
+        for k in scores:
+            if strikes[k] >= 3:
+                scores[k] *= 0.5
+
         accuracy = {k: scores[k] / total_decay for k in scores}
 
-        # ADAPTIVE WEIGHT
+        # ADAPTIVE WEIGHT (มั่นใจในตัวที่คะแนนสูงมากขึ้น)
         weighted = {}
         for k in self.base_weights:
-            adaptive = max(0.10, accuracy[k])
-            weighted[k] = self.base_weights[k] * (0.35 + 0.65 * adaptive)
+            adaptive = max(0.05, accuracy[k])
+            weighted[k] = self.base_weights[k] * (0.20 + 0.80 * adaptive)
             
         total = sum(weighted.values())
         if total <= 0: return self.base_weights.copy()
         weights = {k: v / total for k, v in weighted.items()}
 
-        if weights["AI"] > 0.58:
-            diff = weights["AI"] - 0.58
-            weights["AI"] = 0.58
+        # Limit AI Max ให้ไม่เกิน 55% เพื่อกระจายความเสี่ยงให้สมการและสถิติด้วย
+        if weights["AI"] > 0.55:
+            diff = weights["AI"] - 0.55
+            weights["AI"] = 0.55
             other_sum = sum(v for k, v in weights.items() if k != "AI")
             if other_sum > 0:
                 for k in weights:
@@ -501,7 +539,6 @@ class EnsembleEngine:
             X_next = ext.iloc[[i]][self.features].astype(np.float32)
             preds = {}
             for pos in positions:
-                # --- ใช้ fast_mode สำหรับประวัติย้อนหลังเพื่อความรวดเร็ว ---
                 preds[pos] = self.process_position(pos, hist, X, X_next, fast_mode=True)
 
             actual_row = self.df.iloc[i]
@@ -541,7 +578,7 @@ def hit_mark(hit): return "✅ <b>เข้า</b>" if hit else "❌ หลุ�
 # ============================================================
 
 st.markdown('<div class="main-title">🚀 LOTTO AI V.MAX</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">HYBRID AI + STATISTICS + EQUATION<br>TOP-3 EVERY POSITION • TOP-5 OVERALL • 10-DRAW HISTORY (FAST MODE)</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">HYBRID AI + STATISTICS + EQUATION<br>TOP-3 EVERY POSITION • TOP-5 OVERALL • SELF-CORRECTING</div>', unsafe_allow_html=True)
 st.divider()
 
 c1, c2 = st.columns(2)
@@ -632,6 +669,6 @@ if st.button("🚀 วิเคราะห์เลขเด่น", type="prim
             </div>
         """, unsafe_allow_html=True)
 
-    st.success("✅ วิเคราะห์เสร็จสิ้น (รันเร็วขึ้นด้วยระบบ Fast Mode)")
-    st.caption("Strict Causal • Leakage-safe • Walk-Forward • Dynamic Ensemble")
+    st.success("✅ วิเคราะห์เสร็จสิ้น (รันเร็วขึ้นด้วยระบบ Fast Mode & Self-Correction)")
+    st.caption("Strict Causal • Leakage-safe • Walk-Forward • Auto-Adaptive")
     st.caption("⚠️ TOP-3/TOP-5 เป็นคะแนนจากโมเดลและสถิติ ไม่ใช่การรับประกันผลรางวัลจริง")
