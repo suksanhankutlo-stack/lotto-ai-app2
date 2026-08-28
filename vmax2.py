@@ -2194,7 +2194,8 @@ selected_lotto = c1.selectbox(
     "🎯 เลือกหวย",
     list(
         LOTTERY_SOURCES.keys()
-    )
+    ),
+    key="lotto_source_selector"
 )
 
 day_options = {
@@ -2228,7 +2229,8 @@ day_label = c2.selectbox(
     "📅 วันออกรางวัล",
     list(
         day_options.keys()
-    )
+    ),
+    key="lotto_day_selector"
 )
 
 
