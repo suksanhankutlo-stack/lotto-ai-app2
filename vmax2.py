@@ -265,7 +265,6 @@ class FastAI:
         hgb_iter = 30 if fast_mode else 70
         max_depth = 6
 
-        # 🔥 AUTO-MUTATION: ลดความซับซ้อนโมเดล แก้ Overfit
         if mutation_mode:
             estimators = max(10, int(estimators * 0.7))
             hgb_iter = max(15, int(hgb_iter * 0.7))
@@ -342,7 +341,6 @@ class EnsembleEngine:
             actual = int(df_hist[pos].iloc[idx])
             hist = df_hist.iloc[:idx]
 
-            # 1. AI
             ai_prob = np.zeros(10)
             if proxy_preds is not None:
                 for c, p in zip(proxy_classes, proxy_preds[step]): ai_prob[int(c)] = p
@@ -351,7 +349,6 @@ class EnsembleEngine:
             if actual in np.argsort(ai_prob)[::-1][:5]: scores["AI"] += decay; strikes["AI"] = 0
             else: scores["AI"] *= 0.85; strikes["AI"] += 1
 
-            # 2. Stats & Eq
             fq_prob = self.freq.analyze(hist, pos)
             if actual in np.argsort(fq_prob)[::-1][:5]: scores["Freq"] += decay; strikes["Freq"] = 0
             else: scores["Freq"] *= 0.85; strikes["Freq"] += 1
@@ -368,7 +365,6 @@ class EnsembleEngine:
             if actual in np.argsort(eq_prob)[::-1][:5]: scores["Eq"] += decay; strikes["Eq"] = 0
             else: scores["Eq"] *= 0.85; strikes["Eq"] += 1
 
-            # 🌟 TRACK ENSEMBLE SUCCESS (Top-3 check for Mutation)
             step_final = (self.base_weights["AI"]*ai_prob + self.base_weights["Freq"]*fq_prob + 
                           self.base_weights["ST"]*st_prob + self.base_weights["Pattern"]*pt_prob + 
                           self.base_weights["Eq"]*eq_prob)
@@ -400,13 +396,11 @@ class EnsembleEngine:
     def process_position(self, pos, hist, X, X_next, fast_mode=False):
         weights, ensemble_hits = self.backtest(pos, X, hist)
         
-        # 🔥 AUTO-MUTATION: เช็คว่าโปรแกรมทาย TOP-3 หลักนี้พลาดติดกัน 2 งวดล่าสุดหรือไม่?
         mutation_mode = (len(ensemble_hits) >= 2 and ensemble_hits[-1] == 0 and ensemble_hits[-2] == 0)
         
         if mutation_mode:
             status_msg = "⚠️ ปรับตัวฉุกเฉิน (หลุด 2 งวดติด)"
             status_color = "#E65100"
-            # โยกน้ำหนักหนี AI ที่กำลังพัง
             weights = {"AI": 0.20, "Freq": 0.30, "ST": 0.20, "Pattern": 0.10, "Eq": 0.20}
         else:
             status_msg = "✅ เดินระบบปกติ (ฟอร์มดี)"
@@ -512,17 +506,19 @@ st.markdown('<div class="sub-title">AI + STATS + EQUATION • TOP-3 ทุกห
 st.divider()
 
 c1, c2 = st.columns(2)
-selected_lotto = c1.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()))
+# ✅ ใส่ KEY ที่เป็นเอกลักษณ์ที่สุดเพื่อไม่ให้ชนกับ Script อื่น
+selected_lotto = c1.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()), key="unique_hybrid_vmax_select_lotto_source")
 day_options = {"อัตโนมัติ": None, "วันจันทร์": 0, "วันอังคาร": 1, "วันพุธ": 2, "วันพฤหัสบดี": 3, "วันศุกร์": 4, "วันเสาร์": 5, "วันอาทิตย์": 6}
-day_label = c2.selectbox("📅 วันออกรางวัล", list(day_options.keys()))
+day_label = c2.selectbox("📅 วันออกรางวัล", list(day_options.keys()), key="unique_hybrid_vmax_select_lotto_day")
 
 st.write("")
-if st.button("🔄 อัปเดตข้อมูลใหม่ (Clear Cache)", use_container_width=True):
+# ✅ ใส่ KEY ที่ปุ่มด้วย
+if st.button("🔄 อัปเดตข้อมูลใหม่ (Clear Cache)", use_container_width=True, key="unique_hybrid_btn_clear_cache"):
     st.cache_data.clear()
     st.success("✅ ล้างแคชเรียบร้อยแล้ว! โปรแกรมพร้อมดึงข้อมูลล่าสุดจากเว็บไซต์")
 st.write("")
 
-if st.button("🚀 วิเคราะห์เลขเด่น (Auto-Fix Mode)", type="primary", use_container_width=True):
+if st.button("🚀 วิเคราะห์เลขเด่น (Auto-Fix Mode)", type="primary", use_container_width=True, key="unique_hybrid_btn_analyze"):
     progress_bar = st.progress(0)
     status_text = st.empty()
 
