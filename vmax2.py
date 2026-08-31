@@ -1,6 +1,6 @@
 # ============================================================
-# 🚀 LOTTO AI V.MAX HYBRID (SPEED OPTIMIZED + SELF-CORRECTING)
-# TOP-3 EVERY POSITION + TOP-5 OVERALL + 10-DRAW HISTORY
+# 🚀 LOTTO AI V.MAX HYBRID AUTO-FIX (SPEED + SELF-CORRECTING)
+# TOP-3 EVERY POSITION + TOP-5 OVERALL + AUTO-MUTATION
 # ============================================================
 
 import streamlit as st
@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore")
 # ============================================================
 
 st.set_page_config(
-    page_title="Lotto AI V.MAX",
+    page_title="Lotto AI V.MAX Hybrid",
     page_icon="🚀",
     layout="centered"
 )
@@ -57,19 +57,18 @@ LOTTERY_SOURCES = {
 st.markdown(
     """
     <style>
-    .main-title { font-size: 30px; font-weight: 800; text-align: center; margin-bottom: 3px; }
-    .sub-title { font-size: 13px; text-align: center; color: #777; margin-bottom: 15px; }
-    .section-title { font-size: 19px; font-weight: 800; margin-top: 15px; margin-bottom: 8px; }
-    .position-card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 7px 0; text-align: center; }
-    .position-name { font-size: 14px; font-weight: 700; color: #666; margin-bottom: 5px; }
-    .top-number { font-size: 27px; font-weight: 800; margin: 0 5px; }
-    .prob { font-size: 11px; color: #888; }
-    .overall-card { border: 1px solid #ddd; border-radius: 14px; padding: 15px; margin: 8px 0; text-align: center; }
-    .overall-number { font-size: 29px; font-weight: 800; margin: 0 5px; }
-    .history-card { border: 1px solid #ddd; border-radius: 10px; padding: 11px; margin: 8px 0; }
-    .history-date { font-weight: 800; font-size: 14px; margin-bottom: 6px; }
-    .history-line { font-size: 13px; margin: 3px 0; }
-    .real { font-weight: 800; }
+    .main-title { font-size: 30px; font-weight: 900; text-align: center; margin-bottom: 3px; color:#D32F2F; }
+    .sub-title { font-size: 13px; text-align: center; color: #555; margin-bottom: 15px; }
+    .section-title { font-size: 19px; font-weight: 900; margin-top: 15px; margin-bottom: 8px; color: #333; }
+    .position-card { border: 1px solid #e0e0e0; border-radius: 12px; padding: 12px; margin: 8px 0; text-align: center; background:#fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .position-name { font-size: 15px; font-weight: 800; color: #444; margin-bottom: 0px; }
+    .top-number { font-size: 28px; font-weight: 900; margin: 0 6px; color:#1565C0; }
+    .overall-card { border: 2px solid #ffcdd2; border-radius: 14px; padding: 15px; margin: 10px 0; text-align: center; background:linear-gradient(to bottom right,#ffffff,#fff5f5); }
+    .overall-number { font-size: 32px; font-weight: 900; margin: 0 6px; color:#C62828; }
+    .history-card { border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; margin: 10px 0; background:#fafafa; }
+    .history-date { font-weight: 900; font-size: 14px; margin-bottom: 6px; color:#1976D2; }
+    .history-line { font-size: 13px; margin: 4px 0; }
+    .real { font-weight: 900; color:#D32F2F; }
     </style>
     """,
     unsafe_allow_html=True
@@ -83,10 +82,7 @@ st.markdown(
 @st.cache_data(ttl=180, show_spinner=False)
 def fetch_and_clean_data(url):
     try:
-        headers = {
-            "User-Agent":
-            "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36"
-        }
+        headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
@@ -135,20 +131,15 @@ def fetch_and_clean_data(url):
 
 def build_features(df, lags=(1, 2, 3, 5), rolls=(3, 5, 10)):
     x = df.copy()
-    r3 = x["Result_3D"].astype(str)
-    r2 = x["Result_2D"].astype(str)
+    r3, r2 = x["Result_3D"].astype(str), x["Result_2D"].astype(str)
     
-    x["H"] = r3.str[0].astype(np.int8)
-    x["T"] = r3.str[1].astype(np.int8)
-    x["O"] = r3.str[2].astype(np.int8)
-    x["T2"] = r2.str[0].astype(np.int8)
-    x["O2"] = r2.str[1].astype(np.int8)
+    x["H"], x["T"], x["O"] = r3.str[0].astype(np.int8), r3.str[1].astype(np.int8), r3.str[2].astype(np.int8)
+    x["T2"], x["O2"] = r2.str[0].astype(np.int8), r2.str[1].astype(np.int8)
     
     ph, pt, po = x["H"].shift(1), x["T"].shift(1), x["O"].shift(1)
     x["PrevSum"] = ph + pt + po
     x["PrevOdd"] = (ph % 2) + (pt % 2) + (po % 2)
-    x["DistHT"] = (ph - pt).abs()
-    x["DistTO"] = (pt - po).abs()
+    x["DistHT"], x["DistTO"] = (ph - pt).abs(), (pt - po).abs()
     
     for pos in ["H", "T", "O", "T2", "O2"]:
         s = x[pos]
@@ -172,34 +163,24 @@ def build_features(df, lags=(1, 2, 3, 5), rolls=(3, 5, 10)):
 
 
 # ============================================================
-# 5. FREQUENCY
+# 5. ENGINES
 # ============================================================
 class FrequencyEngine:
     def analyze(self, df, pos):
         s = df[pos].astype(int)
         if len(s) == 0: return np.ones(10) / 10
-        r15 = s.tail(15).value_counts(normalize=True)
-        r30 = s.tail(30).value_counts(normalize=True)
-        all_f = s.value_counts(normalize=True)
-        score = np.array([r15.get(d, 0)*0.55 + r30.get(d, 0)*0.30 + all_f.get(d, 0)*0.15 for d in range(10)])
-        score += 0.01
+        r15, r30, all_f = s.tail(15).value_counts(normalize=True), s.tail(30).value_counts(normalize=True), s.value_counts(normalize=True)
+        score = np.array([r15.get(d, 0)*0.55 + r30.get(d, 0)*0.30 + all_f.get(d, 0)*0.15 for d in range(10)]) + 0.01
         return score / score.sum()
 
-# ============================================================
-# 6. TRANSITION
-# ============================================================
 class TransitionEngine:
     def analyze(self, df, pos):
         if len(df) < 6: return np.ones(10) / 10
         subset = df[df[pos].shift(1) == int(df[pos].iloc[-1])]
         if len(subset) < 2: return np.ones(10) / 10
-        freq = subset[pos].value_counts(normalize=True)
-        score = np.array([freq.get(d, 0) for d in range(10)]) + 0.01
+        score = np.array([subset[pos].value_counts(normalize=True).get(d, 0) for d in range(10)]) + 0.01
         return score / score.sum()
 
-# ============================================================
-# 7. PATTERN
-# ============================================================
 class PatternEngine:
     def analyze(self, df, pos):
         if len(df) < 7: return np.ones(10) / 10
@@ -207,42 +188,20 @@ class PatternEngine:
         subset = df[(df[pos].shift(1) == a) & (df[pos].shift(2) == b)]
         if len(subset) < 2: subset = df[df[pos].shift(1) == a]
         if len(subset) < 1: return np.ones(10) / 10
-        freq = subset[pos].value_counts(normalize=True)
-        score = np.array([freq.get(d, 0) for d in range(10)]) + 0.01
+        score = np.array([subset[pos].value_counts(normalize=True).get(d, 0) for d in range(10)]) + 0.01
         return score / score.sum()
 
-
-# ============================================================
-# 8. EQUATION ENGINE
-# ============================================================
 class EquationEngine:
     def __init__(self):
         self.equations = self._build_equations()
         
     def _build_equations(self):
-        eq = [
-            ("L1", lambda a,b,c,d: a), ("L2", lambda a,b,c,d: b), 
-            ("L3", lambda a,b,c,d: c), ("L5", lambda a,b,c,d: d)
-        ]
+        eq = [("L1", lambda a,b,c,d: a), ("L2", lambda a,b,c,d: b), ("L3", lambda a,b,c,d: c), ("L5", lambda a,b,c,d: d)]
         eq += [("L1+L2", lambda a,b,c,d: a+b), ("L1+L3", lambda a,b,c,d: a+c), ("L1+L5", lambda a,b,c,d: a+d),
                ("L2+L3", lambda a,b,c,d: b+c), ("L2+L5", lambda a,b,c,d: b+d), ("L3+L5", lambda a,b,c,d: c+d)]
-        eq += [("L1-L2", lambda a,b,c,d: a-b), ("L1-L3", lambda a,b,c,d: a-c), ("L1-L5", lambda a,b,c,d: a-d),
-               ("L2-L3", lambda a,b,c,d: b-c), ("L2-L5", lambda a,b,c,d: b-d), ("L3-L5", lambda a,b,c,d: c-d)]
-        eq += [("ABS(L1-L2)", lambda a,b,c,d: abs(a-b)), ("ABS(L1-L3)", lambda a,b,c,d: abs(a-c)), 
-               ("ABS(L1-L5)", lambda a,b,c,d: abs(a-d)), ("ABS(L2-L3)", lambda a,b,c,d: abs(b-c)), 
-               ("ABS(L2-L5)", lambda a,b,c,d: abs(b-d)), ("ABS(L3-L5)", lambda a,b,c,d: abs(c-d))]
-        eq += [("L1+L2+L3", lambda a,b,c,d: a+b+c), ("L1+L3+L5", lambda a,b,c,d: a+c+d), ("L1+L2+L5", lambda a,b,c,d: a+b+d)]
-        eq += [("2L1+L2", lambda a,b,c,d: 2*a+b), ("L1+2L2", lambda a,b,c,d: a+2*b), ("2L1+L3", lambda a,b,c,d: 2*a+c),
-               ("L1+2L3", lambda a,b,c,d: a+2*c), ("2L1+L5", lambda a,b,c,d: 2*a+d), ("L1+2L5", lambda a,b,c,d: a+2*d)]
+        eq += [("ABS(L1-L2)", lambda a,b,c,d: abs(a-b)), ("ABS(L1-L3)", lambda a,b,c,d: abs(a-c)), ("ABS(L2-L5)", lambda a,b,c,d: abs(b-d))]
+        eq += [("L1+L2+L3", lambda a,b,c,d: a+b+c), ("2L1+L2", lambda a,b,c,d: 2*a+b), ("L1+2L2", lambda a,b,c,d: a+2*b)]
         return eq
-
-    def _lags(self, df, pos, idx):
-        if idx < 5: return None
-        return (int(df[pos].iloc[idx-1]), int(df[pos].iloc[idx-2]), int(df[pos].iloc[idx-3]), int(df[pos].iloc[idx-5]))
-
-    def _predict(self, fn, vals):
-        try: return int(fn(*vals)) % 10
-        except: return -1
 
     def discover(self, df, pos, bt=10):
         n = len(df)
@@ -253,10 +212,10 @@ class EquationEngine:
         for name, fn in self.equations:
             hits, total, recent_hits, recent_total = 0, 0, 0, 0
             for idx in range(start, n):
-                vals = self._lags(df, pos, idx)
-                if vals is None: continue
-                pred = self._predict(fn, vals)
-                if pred < 0: continue
+                if idx < 5: continue
+                vals = (int(df[pos].iloc[idx-1]), int(df[pos].iloc[idx-2]), int(df[pos].iloc[idx-3]), int(df[pos].iloc[idx-5]))
+                try: pred = int(fn(*vals)) % 10
+                except: continue
                 
                 actual = int(df[pos].iloc[idx])
                 total += 1
@@ -265,85 +224,71 @@ class EquationEngine:
                     if idx >= n - 5: recent_hits += 1
                 if idx >= n - 5: recent_total += 1
                 
-            if total == 0: continue
-            hit = hits / total
-            recent = (recent_hits / recent_total if recent_total > 0 else 0)
-            if hit >= 0.10 and recent >= 0.10:
-                results.append((name, fn, hit, recent, 0.70*hit + 0.30*recent))
+            if total > 0:
+                hit, recent = hits / total, (recent_hits / recent_total if recent_total > 0 else 0)
+                if hit >= 0.10 and recent >= 0.10:
+                    results.append((name, fn, hit, recent, 0.70*hit + 0.30*recent))
 
         if not results: return {"prob": np.ones(10) / 10, "strength": 0.0}
         results.sort(key=lambda x: x[4], reverse=True)
         selected = results[:8]
         
-        vals = self._lags(df, pos, n)
-        if vals is None: return {"prob": np.ones(10) / 10, "strength": 0.0}
-        
+        vals = (int(df[pos].iloc[n-1]), int(df[pos].iloc[n-2]), int(df[pos].iloc[n-3]), int(df[pos].iloc[n-5]))
         prob, total_weight, strengths = np.zeros(10), 0, []
         for name, fn, hit, recent, score in selected:
-            pred = self._predict(fn, vals)
-            if pred < 0: continue
+            try: pred = int(fn(*vals)) % 10
+            except: continue
             weight = 0.50 + score
             prob[pred] += weight
             total_weight += weight
             strengths.append(hit)
             
         if total_weight <= 0: prob = np.ones(10) / 10
-        else:
-            prob /= total_weight
-            prob += 0.01
-            prob /= prob.sum()
+        else: prob = (prob / total_weight) + 0.01; prob /= prob.sum()
         return {"prob": prob, "strength": float(np.mean(strengths) if strengths else 0)}
 
 
 # ============================================================
-# 9. AI
+# 9. AI (MUTATION AWARE)
 # ============================================================
 
 class FastAI:
     def __init__(self, trees=35):
         self.trees = trees
-        self.weights = (0.35, 0.35, 0.30) # RF, ET, HGB
+        self.weights = (0.35, 0.35, 0.30)
 
-    def predict(self, X, y, X_next, fast_mode=False):
+    def predict(self, X, y, X_next, fast_mode=False, mutation_mode=False):
         rf_w, et_w, hgb_w = self.weights
-        result = np.zeros(10)
-        total_w = 0
+        result, total_w = np.zeros(10), 0
         
-        # ถ้า fast_mode ให้ลด estimators และข้าม RF ไปเพื่อความเร็วในการทำประวัติย้อนหลัง
         estimators = max(10, self.trees // 2) if fast_mode else self.trees
         hgb_iter = 30 if fast_mode else 70
+        max_depth = 6
 
-        # ----------------------------------------------------
-        # RF (Skip in fast_mode)
-        # ----------------------------------------------------
+        # 🔥 AUTO-MUTATION: ลดความซับซ้อนโมเดล แก้ Overfit
+        if mutation_mode:
+            estimators = max(10, int(estimators * 0.7))
+            hgb_iter = max(15, int(hgb_iter * 0.7))
+            max_depth = 4
+
         if not fast_mode:
-            model_rf = RandomForestClassifier(n_estimators=estimators, max_depth=6, min_samples_leaf=3, max_features="sqrt", class_weight="balanced", n_jobs=-1, random_state=42)
+            model_rf = RandomForestClassifier(n_estimators=estimators, max_depth=max_depth, min_samples_leaf=3, max_features="sqrt", class_weight="balanced", n_jobs=-1, random_state=42)
             model_rf.fit(X, y)
-            proba = model_rf.predict_proba(X_next)[0]
-            for c, p in zip(model_rf.classes_, proba): result[int(c)] += (p * rf_w)
+            for c, p in zip(model_rf.classes_, model_rf.predict_proba(X_next)[0]): result[int(c)] += (p * rf_w)
             total_w += rf_w
 
-        # ----------------------------------------------------
-        # ExtraTrees
-        # ----------------------------------------------------
-        model_et = ExtraTreesClassifier(n_estimators=estimators, max_depth=6, min_samples_leaf=3, max_features="sqrt", class_weight="balanced", n_jobs=-1, random_state=43)
+        model_et = ExtraTreesClassifier(n_estimators=estimators, max_depth=max_depth, min_samples_leaf=3, max_features="sqrt", class_weight="balanced", n_jobs=-1, random_state=43)
         model_et.fit(X, y)
-        proba = model_et.predict_proba(X_next)[0]
-        for c, p in zip(model_et.classes_, proba): result[int(c)] += (p * et_w)
+        for c, p in zip(model_et.classes_, model_et.predict_proba(X_next)[0]): result[int(c)] += (p * et_w)
         total_w += et_w
 
-        # ----------------------------------------------------
-        # HGB
-        # ----------------------------------------------------
         model_hgb = HistGradientBoostingClassifier(max_iter=hgb_iter, learning_rate=0.05, max_leaf_nodes=15, min_samples_leaf=3, l2_regularization=0.5, random_state=44)
         model_hgb.fit(X, y)
-        proba = model_hgb.predict_proba(X_next)[0]
-        for c, p in zip(model_hgb.classes_, proba): result[int(c)] += (p * hgb_w)
+        for c, p in zip(model_hgb.classes_, model_hgb.predict_proba(X_next)[0]): result[int(c)] += (p * hgb_w)
         total_w += hgb_w
 
         if total_w <= 0: return np.ones(10) / 10
-        result /= total_w
-        result += 0.001
+        result = (result / total_w) + 0.001
         return result / result.sum()
 
 
@@ -354,20 +299,12 @@ class FastAI:
 class EnsembleEngine:
     def __init__(self, df, lottery_name, target_dow=None):
         self.df = df.copy()
-        self.lottery_name = lottery_name
         self.target_dow = target_dow
         n = len(df)
 
-        # SPEED CONFIG (Optimized for Streamlit)
-        if n >= 700:
-            self.trees = 30
-            self.bt = 10
-        elif n >= 400:
-            self.trees = 25
-            self.bt = 8
-        else:
-            self.trees = 20
-            self.bt = 7
+        if n >= 700: self.trees, self.bt = 30, 10
+        elif n >= 400: self.trees, self.bt = 25, 8
+        else: self.trees, self.bt = 20, 7
 
         self.lags, self.rolls = [1, 2, 3, 5], [3, 5, 10]
         self.features = ["PrevSum", "PrevOdd", "DistHT", "DistTO"]
@@ -383,15 +320,15 @@ class EnsembleEngine:
 
     def backtest(self, pos, X, df_hist):
         n = len(X)
-        if n < 45: return self.base_weights.copy()
+        if n < 45: return self.base_weights.copy(), []
+        
         start = max(35, n - self.bt)
         scores = {"AI": 0.0, "Freq": 0.0, "ST": 0.0, "Pattern": 0.0, "Eq": 0.0}
-        total_decay = 0
-        
-        # ตัวนับสถิติหลุดติดกัน (Strike Tracker)
         strikes = {"AI": 0, "Freq": 0, "ST": 0, "Pattern": 0, "Eq": 0}
+        total_decay = 0
+        ensemble_hits = []
 
-        proxy_preds = None
+        proxy_preds, proxy_classes = None, None
         try:
             proxy = ExtraTreesClassifier(n_estimators=10, max_depth=5, min_samples_leaf=3, max_features="sqrt", n_jobs=-1, random_state=42)
             proxy.fit(X.iloc[:start], df_hist[pos].iloc[:start])
@@ -405,70 +342,51 @@ class EnsembleEngine:
             actual = int(df_hist[pos].iloc[idx])
             hist = df_hist.iloc[:idx]
 
-            # 1. AI Proxy Eval
+            # 1. AI
+            ai_prob = np.zeros(10)
             if proxy_preds is not None:
-                tmp = np.zeros(10)
-                for c, p in zip(proxy_classes, proxy_preds[step]): tmp[int(c)] = p
-                if actual in np.argsort(tmp)[::-1][:5]: 
-                    scores["AI"] += decay
-                    strikes["AI"] = 0
-                else: 
-                    scores["AI"] *= 0.85 # Penalty: หักคะแนน
-                    strikes["AI"] += 1
+                for c, p in zip(proxy_classes, proxy_preds[step]): ai_prob[int(c)] = p
+            else: ai_prob = np.ones(10)/10
+                
+            if actual in np.argsort(ai_prob)[::-1][:5]: scores["AI"] += decay; strikes["AI"] = 0
+            else: scores["AI"] *= 0.85; strikes["AI"] += 1
 
-            # 2. Stats Eval (Freq)
-            if actual in np.argsort(self.freq.analyze(hist, pos))[::-1][:5]: 
-                scores["Freq"] += decay
-                strikes["Freq"] = 0
-            else: 
-                scores["Freq"] *= 0.85
-                strikes["Freq"] += 1
+            # 2. Stats & Eq
+            fq_prob = self.freq.analyze(hist, pos)
+            if actual in np.argsort(fq_prob)[::-1][:5]: scores["Freq"] += decay; strikes["Freq"] = 0
+            else: scores["Freq"] *= 0.85; strikes["Freq"] += 1
 
-            # 3. Transition (ST)
-            if actual in np.argsort(self.transition.analyze(hist, pos))[::-1][:5]: 
-                scores["ST"] += decay
-                strikes["ST"] = 0
-            else: 
-                scores["ST"] *= 0.85
-                strikes["ST"] += 1
+            st_prob = self.transition.analyze(hist, pos)
+            if actual in np.argsort(st_prob)[::-1][:5]: scores["ST"] += decay; strikes["ST"] = 0
+            else: scores["ST"] *= 0.85; strikes["ST"] += 1
 
-            # 4. Pattern
-            if actual in np.argsort(self.pattern.analyze(hist, pos))[::-1][:5]: 
-                scores["Pattern"] += decay
-                strikes["Pattern"] = 0
-            else: 
-                scores["Pattern"] *= 0.85
-                strikes["Pattern"] += 1
+            pt_prob = self.pattern.analyze(hist, pos)
+            if actual in np.argsort(pt_prob)[::-1][:5]: scores["Pattern"] += decay; strikes["Pattern"] = 0
+            else: scores["Pattern"] *= 0.85; strikes["Pattern"] += 1
             
-            # 5. Equation Eval
-            eq_result = self.equation.discover(hist, pos, bt=min(8, max(5, idx - 35)))
-            if actual in np.argsort(eq_result["prob"])[::-1][:5]: 
-                scores["Eq"] += decay
-                strikes["Eq"] = 0
-            else: 
-                scores["Eq"] *= 0.85
-                strikes["Eq"] += 1
+            eq_prob = self.equation.discover(hist, pos, bt=min(8, max(5, idx - 35)))["prob"]
+            if actual in np.argsort(eq_prob)[::-1][:5]: scores["Eq"] += decay; strikes["Eq"] = 0
+            else: scores["Eq"] *= 0.85; strikes["Eq"] += 1
 
-        if total_decay <= 0: return self.base_weights.copy()
+            # 🌟 TRACK ENSEMBLE SUCCESS (Top-3 check for Mutation)
+            step_final = (self.base_weights["AI"]*ai_prob + self.base_weights["Freq"]*fq_prob + 
+                          self.base_weights["ST"]*st_prob + self.base_weights["Pattern"]*pt_prob + 
+                          self.base_weights["Eq"]*eq_prob)
+            step_final /= step_final.sum()
+            ensemble_hits.append(1 if actual in np.argsort(step_final)[::-1][:3] else 0)
 
-        # 🚀 SELF-CORRECTION: หากเครื่องมือไหนหลุดติดกัน >= 3 งวด ให้หั่นคะแนนทิ้งครึ่งนึงทันที
+        if total_decay <= 0: return self.base_weights.copy(), ensemble_hits
+
         for k in scores:
-            if strikes[k] >= 3:
-                scores[k] *= 0.5
+            if strikes[k] >= 3: scores[k] *= 0.5
 
         accuracy = {k: scores[k] / total_decay for k in scores}
-
-        # ADAPTIVE WEIGHT (มั่นใจในตัวที่คะแนนสูงมากขึ้น)
-        weighted = {}
-        for k in self.base_weights:
-            adaptive = max(0.05, accuracy[k])
-            weighted[k] = self.base_weights[k] * (0.20 + 0.80 * adaptive)
+        weighted = {k: self.base_weights[k] * (0.20 + 0.80 * max(0.05, accuracy[k])) for k in self.base_weights}
             
         total = sum(weighted.values())
-        if total <= 0: return self.base_weights.copy()
+        if total <= 0: return self.base_weights.copy(), ensemble_hits
         weights = {k: v / total for k, v in weighted.items()}
 
-        # Limit AI Max ให้ไม่เกิน 55% เพื่อกระจายความเสี่ยงให้สมการและสถิติด้วย
         if weights["AI"] > 0.55:
             diff = weights["AI"] - 0.55
             weights["AI"] = 0.55
@@ -477,31 +395,43 @@ class EnsembleEngine:
                 for k in weights:
                     if k != "AI": weights[k] += diff * (weights[k] / other_sum)
                     
-        return weights
+        return weights, ensemble_hits
 
     def process_position(self, pos, hist, X, X_next, fast_mode=False):
-        weights = self.backtest(pos, X, hist)
-        ai = self.ai.predict(X, hist[pos], X_next, fast_mode=fast_mode)
+        weights, ensemble_hits = self.backtest(pos, X, hist)
+        
+        # 🔥 AUTO-MUTATION: เช็คว่าโปรแกรมทาย TOP-3 หลักนี้พลาดติดกัน 2 งวดล่าสุดหรือไม่?
+        mutation_mode = (len(ensemble_hits) >= 2 and ensemble_hits[-1] == 0 and ensemble_hits[-2] == 0)
+        
+        if mutation_mode:
+            status_msg = "⚠️ ปรับตัวฉุกเฉิน (หลุด 2 งวดติด)"
+            status_color = "#E65100"
+            # โยกน้ำหนักหนี AI ที่กำลังพัง
+            weights = {"AI": 0.20, "Freq": 0.30, "ST": 0.20, "Pattern": 0.10, "Eq": 0.20}
+        else:
+            status_msg = "✅ เดินระบบปกติ (ฟอร์มดี)"
+            status_color = "#2E7D32"
+
+        ai = self.ai.predict(X, hist[pos], X_next, fast_mode=fast_mode, mutation_mode=mutation_mode)
         fq = self.freq.analyze(hist, pos)
         stp = self.transition.analyze(hist, pos)
         ptn = self.pattern.analyze(hist, pos)
         eq = self.equation.discover(hist, pos, bt=self.bt)["prob"]
 
         final = (weights["AI"]*ai + weights["Freq"]*fq + weights["ST"]*stp + weights["Pattern"]*ptn + weights["Eq"]*eq)
-        final += 0.001
-        final /= final.sum()
+        final = (final + 0.001) / (final + 0.001).sum()
         
         top3 = [(int(i), float(final[i])) for i in np.argsort(final)[::-1][:3]]
-        return {"Prob": final, "Top3": top3, "Weights": weights}
+        return {"Prob": final, "Top3": top3, "Weights": weights, "StatusMsg": status_msg, "StatusColor": status_color}
 
     def predict_all(self, progress_bar=None, status_text=None):
         last_date = self.df["Date"].iloc[-1]
-        
+        days = 7
         if self.target_dow is not None:
             days = (self.target_dow - last_date.dayofweek) % 7
             if days <= 0: days = 7
-        else:
-            days = max(1, (last_date - self.df["Date"].iloc[-2]).days) if len(self.df) >= 2 else 7
+        elif len(self.df) >= 2:
+            days = max(1, (last_date - self.df["Date"].iloc[-2]).days)
             
         next_date = last_date + timedelta(days=days)
 
@@ -513,8 +443,7 @@ class EnsembleEngine:
         X_next = ext.iloc[[-1]][self.features].astype(np.float32)
 
         predictions = {}
-        positions = ["H", "T", "O", "T2", "O2"]
-        for i, pos in enumerate(positions):
+        for i, pos in enumerate(["H", "T", "O", "T2", "O2"]):
             if status_text: status_text.markdown(f"⚙️ **วิเคราะห์งวดปัจจุบัน {i+1}/5:** {pos}")
             predictions[pos] = self.process_position(pos, hist, X, X_next, fast_mode=False)
             if progress_bar: progress_bar.progress(20 + int(((i + 1) / 5) * 30))
@@ -525,45 +454,45 @@ class EnsembleEngine:
         n_total = len(self.df)
         num_records = min(10, n_total - 45)
         if num_records <= 0: return []
-        start_idx = n_total - num_records
+        
         records = []
         ext = build_features(self.df, self.lags, self.rolls)
         positions = ["H", "T", "O", "T2", "O2"]
 
-        for step, i in enumerate(range(start_idx, n_total)):
+        for step, i in enumerate(range(n_total - num_records, n_total)):
             if status_text: status_text.markdown(f"🕰️ **วิเคราะห์ประวัติย้อนหลัง:** {step+1}/{num_records}")
             if progress_bar: progress_bar.progress(55 + int(((step + 1) / num_records) * 40))
 
-            hist = ext.iloc[:i].copy()
+            hist = ext.iloc[:i]
             X = hist[self.features].astype(np.float32)
             X_next = ext.iloc[[i]][self.features].astype(np.float32)
+            
             preds = {}
-            for pos in positions:
-                preds[pos] = self.process_position(pos, hist, X, X_next, fast_mode=True)
+            for pos in positions: preds[pos] = self.process_position(pos, hist, X, X_next, fast_mode=True)
 
             actual_row = self.df.iloc[i]
             actual_3d, actual_2d = str(actual_row["Result_3D"]).zfill(3), str(actual_row["Result_2D"]).zfill(2)
             actual_digits = {"H": int(actual_3d[0]), "T": int(actual_3d[1]), "O": int(actual_3d[2]), "T2": int(actual_2d[0]), "O2": int(actual_2d[1])}
+            
             position_data = {}
             for pos in positions:
                 nums = [n for n, p in preds[pos]["Top3"]]
-                actual = actual_digits[pos]
-                position_data[pos] = {"nums": nums, "actual": actual, "hit": actual in nums}
+                position_data[pos] = {"nums": nums, "actual": actual_digits[pos], "hit": actual_digits[pos] in nums}
 
             upper_score = (preds["H"]["Prob"] + preds["T"]["Prob"] + preds["O"]["Prob"]) / 3
             lower_score = (preds["T2"]["Prob"] + preds["O2"]["Prob"]) / 2
-            upper_top5 = [int(i) for i in np.argsort(upper_score)[::-1][:5]]
-            lower_top5 = [int(i) for i in np.argsort(lower_score)[::-1][:5]]
-            upper_hit = any(x in upper_top5 for x in [int(x) for x in actual_3d])
-            lower_hit = any(x in lower_top5 for x in [int(x) for x in actual_2d])
+            upper_top5 = [int(idx) for idx in np.argsort(upper_score)[::-1][:5]]
+            lower_top5 = [int(idx) for idx in np.argsort(lower_score)[::-1][:5]]
 
             records.append({
                 "Date": actual_row["Date"], "Result_3D": actual_3d, "Result_2D": actual_2d,
                 "Positions": position_data, "UpperTop5": upper_top5, "LowerTop5": lower_top5,
-                "UpperHit": upper_hit, "LowerHit": lower_hit
+                "UpperHit": any(int(x) in upper_top5 for x in actual_3d),
+                "LowerHit": any(int(x) in lower_top5 for x in actual_2d)
             })
             
         return records[::-1]
+
 
 # ============================================================
 # 11. DISPLAY HELPERS
@@ -573,31 +502,36 @@ def top3_html(items): return " ".join(f'<span class="top-number">{n}</span>' for
 def top5_html(nums): return " ".join(f'<span class="overall-number">{n}</span>' for n in nums)
 def hit_mark(hit): return "✅ <b>เข้า</b>" if hit else "❌ หลุด"
 
+
 # ============================================================
-# 12. HEADER & 13. SELECT & 14. RUN (UI LOGIC)
+# 12. UI APP
 # ============================================================
 
-st.markdown('<div class="main-title">🚀 LOTTO AI V.MAX</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">HYBRID AI + STATISTICS + EQUATION<br>TOP-3 EVERY POSITION • TOP-5 OVERALL • SELF-CORRECTING</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">🚀 LOTTO AI V.MAX HYBRID</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">AI + STATS + EQUATION • TOP-3 ทุกหลัก • TOP-5 รูด/วิ่ง • <b>AUTO-FIX ปรับตัวอัตโนมัติ</b></div>', unsafe_allow_html=True)
 st.divider()
 
 c1, c2 = st.columns(2)
-selected_lotto = c1.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()), key="lotto_source_selector")
+selected_lotto = c1.selectbox("🎯 เลือกหวย", list(LOTTERY_SOURCES.keys()))
 day_options = {"อัตโนมัติ": None, "วันจันทร์": 0, "วันอังคาร": 1, "วันพุธ": 2, "วันพฤหัสบดี": 3, "วันศุกร์": 4, "วันเสาร์": 5, "วันอาทิตย์": 6}
-day_label = c2.selectbox("📅 วันออกรางวัล", list(day_options.keys()), key="lotto_day_selector")
+day_label = c2.selectbox("📅 วันออกรางวัล", list(day_options.keys()))
 
-if st.button("🚀 วิเคราะห์เลขเด่น", type="primary", use_container_width=True):
+st.write("")
+if st.button("🔄 อัปเดตข้อมูลใหม่ (Clear Cache)", use_container_width=True):
+    st.cache_data.clear()
+    st.success("✅ ล้างแคชเรียบร้อยแล้ว! โปรแกรมพร้อมดึงข้อมูลล่าสุดจากเว็บไซต์")
+st.write("")
+
+if st.button("🚀 วิเคราะห์เลขเด่น (Auto-Fix Mode)", type="primary", use_container_width=True):
     progress_bar = st.progress(0)
     status_text = st.empty()
 
     status_text.markdown("⏳ **กำลังโหลดข้อมูลล่าสุด...**")
     df = fetch_and_clean_data(LOTTERY_SOURCES[selected_lotto])
     if df.empty:
-        status_text.error("❌ ไม่สามารถดึงข้อมูลได้")
-        st.stop()
+        status_text.error("❌ ไม่สามารถดึงข้อมูลได้"); st.stop()
     if len(df) < 50:
-        status_text.error(f"❌ ต้องมีอย่างน้อย 50 งวด (พบ {len(df)} งวด)")
-        st.stop()
+        status_text.error(f"❌ ต้องมีอย่างน้อย 50 งวด (พบ {len(df)} งวด)"); st.stop()
     progress_bar.progress(10)
 
     engine = EnsembleEngine(df, selected_lotto, day_options[day_label])
@@ -610,27 +544,38 @@ if st.button("🚀 วิเคราะห์เลขเด่น", type="prim
     
     days = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์", "อาทิตย์"]
     st.divider()
-    st.info(f"📅 งวดเป้าหมาย: วัน{days[next_date.dayofweek]} {next_date.strftime('%d-%m-%Y')} | ข้อมูล {len(df)} งวด")
+    st.info(f"📅 งวดเป้าหมาย: วัน{days[next_date.dayofweek]} {next_date.strftime('%d-%m-%Y')} | อ้างอิง {len(df)} งวด")
 
-    # TOP-3
+    # ------------------- TOP-3 -------------------
     st.markdown('<div class="section-title">🎯 เลขเด่น TOP-3 ทุกหลัก</div>', unsafe_allow_html=True)
     pos_labels = {"H":"หลักร้อย 3 ตัวบน", "T":"หลักสิบ 3 ตัวบน", "O":"หลักหน่วย 3 ตัวบน", "T2":"หลักสิบ 2 ตัวล่าง", "O2":"หลักหน่วย 2 ตัวล่าง"}
+    
     for pos in ["H", "T", "O", "T2", "O2"]:
-        st.markdown(f'<div class="position-card"><div class="position-name">{pos_labels[pos]}</div><div>{top3_html(predictions[pos]["Top3"])}</div></div>', unsafe_allow_html=True)
+        res = predictions[pos]
+        st.markdown(f"""
+            <div class="position-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:6px; margin-bottom:10px;">
+                    <span class="position-name">{pos_labels[pos]}</span>
+                    <span style="background:{res['StatusColor']}; color:white; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:bold;">{res['StatusMsg']}</span>
+                </div>
+                <div>{top3_html(res["Top3"])}</div>
+            </div>
+        """, unsafe_allow_html=True)
 
-    # TOP-5
+    # ------------------- TOP-5 -------------------
     upper_score = (predictions["H"]["Prob"] + predictions["T"]["Prob"] + predictions["O"]["Prob"]) / 3
     lower_score = (predictions["T2"]["Prob"] + predictions["O2"]["Prob"]) / 2
     upper_top5 = [int(i) for i in np.argsort(upper_score)[::-1][:5]]
     lower_top5 = [int(i) for i in np.argsort(lower_score)[::-1][:5]]
 
     st.markdown('<div class="section-title">🔥 สรุปเลขเด่นภาพรวม</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="overall-card"><div style="font-weight:800; margin-bottom:8px;">🔴 เลขเด่นบน TOP-5</div><div>{top5_html(upper_top5)}</div></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="overall-card"><div style="font-weight:800; margin-bottom:8px;">🔵 เลขเด่นล่าง TOP-5</div><div>{top5_html(lower_top5)}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="overall-card"><div style="font-weight:900; margin-bottom:8px; color:#444;">🔴 เลขเด่นบน (รูด/วิ่ง) TOP-5</div><div>{top5_html(upper_top5)}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="overall-card"><div style="font-weight:900; margin-bottom:8px; color:#444;">🔵 เลขเด่นล่าง (รูด/วิ่ง) TOP-5</div><div>{top5_html(lower_top5)}</div></div>', unsafe_allow_html=True)
 
-    # HISTORY
+    # ------------------- HISTORY -------------------
     st.divider()
-    st.markdown('<div class="section-title">📜 ประวัติย้อนหลัง 10 งวด</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📜 ประวัติย้อนหลัง 10 งวด (Adaptive Mode)</div>', unsafe_allow_html=True)
+    
     if not history: st.warning("ไม่มีข้อมูลย้อนหลังเพียงพอ")
     else:
         for rec in history:
@@ -639,22 +584,21 @@ if st.button("🚀 วิเคราะห์เลขเด่น", type="prim
             for pos in ["H", "T", "O", "T2", "O2"]:
                 pdata = rec["Positions"][pos]
                 nums = " • ".join(str(x) for x in pdata["nums"])
-                pos_html += f'<div class="history-line"><b>{pos_labels[pos]}</b>: {nums} | จริง <span class="real">{pdata["actual"]}</span> {hit_mark(pdata["hit"])}</div>'
+                pos_html += f'<div class="history-line"><b>{pos_labels[pos][:7]}</b>: {nums} | จริง <span class="real">{pdata["actual"]}</span> {hit_mark(pdata["hit"])}</div>'
             
             st.markdown(f"""
                 <div class="history-card">
                     <div class="history-date">📅 {date_str}</div>
-                    <div class="history-line"><b>ผลจริงบน:</b> {rec["Result_3D"]}</div>
-                    <div class="history-line"><b>ผลจริงล่าง:</b> {rec["Result_2D"]}</div>
+                    <div class="history-line"><b>ผลจริงบน:</b> <span class="real">{rec["Result_3D"]}</span> &nbsp;|&nbsp; <b>ผลจริงล่าง:</b> <span class="real">{rec["Result_2D"]}</span></div>
                     <hr>{pos_html}<hr>
                     <div class="history-line">🔴 <b>บน TOP-5:</b> {format_top5(rec["UpperTop5"])} {hit_mark(rec["UpperHit"])}</div>
                     <div class="history-line">🔵 <b>ล่าง TOP-5:</b> {format_top5(rec["LowerTop5"])} {hit_mark(rec["LowerHit"])}</div>
                 </div>
             """, unsafe_allow_html=True)
 
-    # SUMMARY
+    # ------------------- SUMMARY -------------------
     if history:
-        st.markdown('<div class="section-title">📊 สรุปผลงานย้อนหลัง 10 งวด</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">📊 สรุปความแม่นยำ (10 งวดล่าสุด)</div>', unsafe_allow_html=True)
         pos_hits = {p: sum(1 for r in history if r["Positions"][p]["hit"]) for p in ["H", "T", "O", "T2", "O2"]}
         total = len(history)
         st.markdown(f"""
@@ -664,11 +608,10 @@ if st.button("🚀 วิเคราะห์เลขเด่น", type="prim
                 <div class="history-line">🔢 <b>หน่วยบน TOP-3:</b> {pos_hits["O"]}/{total}</div>
                 <div class="history-line">🔢 <b>สิบล่าง TOP-3:</b> {pos_hits["T2"]}/{total}</div>
                 <div class="history-line">🔢 <b>หน่วยล่าง TOP-3:</b> {pos_hits["O2"]}/{total}</div><hr>
-                <div class="history-line">🔴 <b>บน TOP-5:</b> {sum(r["UpperHit"] for r in history)}/{total}</div>
-                <div class="history-line">🔵 <b>ล่าง TOP-5:</b> {sum(r["LowerHit"] for r in history)}/{total}</div>
+                <div class="history-line" style="font-weight:bold; color:#D32F2F;">🔴 รูด/วิ่ง บน TOP-5: {sum(r["UpperHit"] for r in history)}/{total}</div>
+                <div class="history-line" style="font-weight:bold; color:#1976D2;">🔵 รูด/วิ่ง ล่าง TOP-5: {sum(r["LowerHit"] for r in history)}/{total}</div>
             </div>
         """, unsafe_allow_html=True)
 
-    st.success("✅ วิเคราะห์เสร็จสิ้น (รันเร็วขึ้นด้วยระบบ Fast Mode & Self-Correction)")
-    st.caption("Strict Causal • Leakage-safe • Walk-Forward • Auto-Adaptive")
-    st.caption("⚠️ TOP-3/TOP-5 เป็นคะแนนจากโมเดลและสถิติ ไม่ใช่การรับประกันผลรางวัลจริง")
+    st.success("✅ วิเคราะห์เสร็จสิ้น (รันเร็วขึ้นด้วยระบบ Fast Mode & Auto-Mutation)")
+    st.caption("⚠️ โปรแกรมใช้วิธีจับแพทเทิร์นและปรับตัวตามสถิติเท่านั้น ไม่สามารถรับประกันผลรางวัลจริงได้ 100%")
